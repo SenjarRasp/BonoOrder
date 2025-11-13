@@ -30,18 +30,15 @@ class RestaurantOrderApp {
             console.log('⚠️ API test failed, but continuing...');
         }
     }
-
-    // API CALL с поддержкой GET/POST
+    
+    // API CALL для реальных данных
     async apiCall(action, data = {}) {
         console.log('📡 API Call:', action, data);
         
-        // Используем GET запросы для обхода CORS
         try {
             const url = new URL(this.apiUrl);
             url.searchParams.set('action', action);
             url.searchParams.set('data', JSON.stringify(data));
-            
-            console.log('🔗 GET URL:', url.toString());
             
             const response = await fetch(url.toString());
             const result = await response.json();
@@ -468,4 +465,5 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
