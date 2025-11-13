@@ -31,22 +31,19 @@ class RestaurantOrderApp {
         }
     }
 
-    // API CALL
+    // API CALL с поддержкой GET/POST
     async apiCall(action, data = {}) {
         console.log('📡 API Call:', action, data);
         
+        // Используем GET запросы для обхода CORS
         try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: action,
-                    ...data
-                })
-            });
+            const url = new URL(this.apiUrl);
+            url.searchParams.set('action', action);
+            url.searchParams.set('data', JSON.stringify(data));
             
+            console.log('🔗 GET URL:', url.toString());
+            
+            const response = await fetch(url.toString());
             const result = await response.json();
             console.log('✅ API Response:', result);
             
@@ -471,3 +468,4 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
