@@ -4,13 +4,11 @@ class RestaurantOrderApp {
             ? '/BonoOrder/' 
             : '/';
         
-        // РЕАЛЬНЫЙ API URL
+        // API URL
         this.apiUrl = 'https://script.google.com/macros/s/AKfycbyRbvBN86m1RrLdvHtrlsN5JYL4qMFGF3mIwsESxXVSmpZZEHF1i8L-QQ4Ec6YVZWSF4g/exec';
         this.currentUser = null;
         this.currentScreen = 'login';
         this.ordersHistory = [];
-        this.deferredPrompt = null;
-        this.installPromptShown = false;
         
         this.init();
     }
@@ -18,72 +16,26 @@ class RestaurantOrderApp {
     init() {
         this.renderScreen('login');
         this.setupEventListeners();
-        this.setupPWA();
         this.testConnection();
     }
 
-    // ТЕСТ ПОДКЛЮЧЕНИЯ с JSONP
+    // Тест подключения
     async testConnection() {
         try {
             console.log('Testing API connection...');
-            const result = await this.jsonpCall('test');
+            const response = await fetch(this.apiUrl);
+            const result = await response.json();
             console.log('✅ API connection successful:', result);
         } catch (error) {
-            console.log('❌ API connection failed:', error);
-            this.showNotification('error', 
-                'Ошибка подключения к серверу. Используем режим ожидания...'
-            );
+            console.log('⚠️ API connection test failed, but continuing...');
         }
     }
 
-    // JSONP CALL для обхода CORS
-    jsonpCall(action, data = {}) {
-        return new Promise((resolve, reject) => {
-            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-            
-            // Создаем script элемент
-            const script = document.createElement('script');
-            
-            // Подготавливаем URL
-            const url = new URL(this.apiUrl);
-            url.searchParams.set('action', action);
-            url.searchParams.set('callback', callbackName);
-            
-            // Добавляем данные
-            Object.keys(data).forEach(key => {
-                url.searchParams.set(key, JSON.stringify(data[key]));
-            });
-            
-            // Глобальная callback функция
-            window[callbackName] = (response) => {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                
-                if (response.status === 'success') {
-                    resolve(response.data);
-                } else {
-                    reject(new Error(response.message));
-                }
-            };
-            
-            // Обработка ошибок
-            script.onerror = () => {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                reject(new Error('Network error'));
-            };
-            
-            script.src = url.toString();
-            document.body.appendChild(script);
-        });
-    }
-
-    // API CALL с fetch и fallback на JSONP
+    // API CALL
     async apiCall(action, data = {}) {
         console.log('📡 API Call:', action, data);
         
         try {
-            // Пробуем обычный fetch
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
                 headers: {
@@ -96,6 +48,7 @@ class RestaurantOrderApp {
             });
             
             const result = await response.json();
+            console.log('✅ API Response:', result);
             
             if (result.status === 'success') {
                 return result.data;
@@ -103,107 +56,32 @@ class RestaurantOrderApp {
                 throw new Error(result.message);
             }
             
-        } catch (fetchError) {
-            console.log('Fetch failed, trying JSONP...', fetchError);
-            
-            // Fallback на JSONP
-            try {
-                return await this.jsonpCall(action, data);
-            } catch (jsonpError) {
-                throw new Error(`API Error: ${jsonpError.message}`);
-            }
+        } catch (error) {
+            console.error('❌ API Error:', error);
+            throw new Error('Ошибка соединения: ' + error.message);
         }
     }
 
-    // ОБНОВЛЕННАЯ настройка PWA
-    setupPWA() {
-        // Регистрация Service Worker с правильным путем
-        if ('serviceWorker' in navigator) {
-            const swPath = `${this.basePath}sw.js`;
-            
-            navigator.serviceWorker.register(swPath)
-                .then((registration) => {
-                    console.log('Service Worker зарегистрирован:', registration);
-                })
-                .catch((error) => {
-                    console.log('Ошибка SW, продолжаем без него:', error);
-                });
-        }
-        
-        // Обработчик установки PWA
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('PWA можно установить');
-            e.preventDefault();
-            this.deferredPrompt = e;
-            
-            if (!this.installPromptShown) {
-                setTimeout(() => this.showInstallPrompt(), 3000);
-                this.installPromptShown = true;
-            }
-        });
-
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('PWA успешно установлено');
-            this.deferredPrompt = null;
-        });
-    }
-
-    // Показ промпта установки
-    showInstallPrompt() {
-        if (this.deferredPrompt && this.currentScreen === 'main') {
-            const installSection = document.createElement('div');
-            installSection.className = 'install-prompt';
-            installSection.innerHTML = `
-                <div style="background: #e8f5e8; border: 2px solid #4caf50; border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center;">
-                    <h3 style="margin: 0 0 10px 0; color: #2e7d32;">📱 Установить приложение</h3>
-                    <p style="margin: 0 0 15px 0; color: #555;">Установите приложение для быстрого доступа</p>
-                    <button class="btn primary" id="installBtn" style="margin: 5px;">Установить</button>
-                    <button class="btn secondary" id="laterBtn" style="margin: 5px;">Позже</button>
-                </div>
-            `;
-            
-            const appElement = document.getElementById('app');
-            const mainScreen = appElement.querySelector('.main-screen');
-            if (mainScreen) {
-                mainScreen.insertBefore(installSection, mainScreen.firstChild);
-                
-                document.getElementById('installBtn').onclick = () => this.installPWA();
-                document.getElementById('laterBtn').onclick = () => {
-                    installSection.remove();
-                    this.installPromptShown = false;
-                };
-            }
-        }
-    }
-
-    // Установка PWA
-    async installPWA() {
-        if (this.deferredPrompt) {
-            this.deferredPrompt.prompt();
-            const { outcome } = await this.deferredPrompt.userChoice;
-            console.log(`User response: ${outcome}`);
-            
-            if (outcome === 'accepted') {
-                this.deferredPrompt = null;
-                const installPrompt = document.querySelector('.install-prompt');
-                if (installPrompt) installPrompt.remove();
-            }
-        }
-    }
-
-    // ОБРАБОТКА ЛОГИНА
+    // Обработка логина
     async handleLogin(email, password) {
         try {
             this.showNotification('loading', 'Вход в систему...');
+            
+            // Для тестирования - используем любые данные
+            if (!email || !password) {
+                throw new Error('Введите email и пароль');
+            }
+            
             this.currentUser = await this.apiCall('login', { email, password });
             this.renderScreen('main');
             this.showNotification('success', `Добро пожаловать, ${this.currentUser.position}!`);
+            
         } catch (error) {
             this.showNotification('error', error.message);
         }
     }
 
-    // ЗАГРУЗКА ТОВАРОВ
+    // Загрузка товаров
     async loadTemplateProducts(templateId) {
         try {
             this.showNotification('loading', 'Загрузка товаров...');
@@ -219,7 +97,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // ОТПРАВКА ЗАЯВКИ
+    // Отправка заявки
     async submitOrder(templateName) {
         try {
             const items = this.collectOrderItems();
@@ -246,13 +124,9 @@ class RestaurantOrderApp {
                 items_count: items.length
             });
             
-            // Показываем результаты отправки
-            const successCount = result.send_results.filter(r => r.status === 'success').length;
-            const totalCount = result.send_results.length;
-            
             this.showNotification('success', 
                 `✅ Заявка ${result.order_id} отправлена!\n` +
-                `📧 Уведомления отправлены ${successCount} из ${totalCount} поставщиков`
+                `📧 Уведомления отправлены поставщикам`
             );
             
             setTimeout(() => {
@@ -284,7 +158,7 @@ class RestaurantOrderApp {
                     quantity: quantity,
                     unit: productUnit,
                     comment: commentInput ? commentInput.value : '',
-                    suppliers: [1, 2]
+                    suppliers: [1]
                 });
             }
         });
@@ -328,10 +202,6 @@ class RestaurantOrderApp {
                 app.innerHTML = this.renderOrderHistoryScreen();
                 break;
         }
-
-        if (screenName === 'main' && this.deferredPrompt && !this.installPromptShown) {
-            setTimeout(() => this.showInstallPrompt(), 1000);
-        }
     }
 
     // Рендер экрана логина
@@ -344,17 +214,17 @@ class RestaurantOrderApp {
                 
                 <form id="loginForm" class="form">
                     <div class="input-group">
-                        <input type="email" id="email" placeholder="Email" required>
+                        <input type="email" id="email" placeholder="Email" required value="test@restaurant.com">
                     </div>
                     <div class="input-group">
-                        <input type="password" id="password" placeholder="Пароль" required>
+                        <input type="password" id="password" placeholder="Пароль" required value="123456">
                     </div>
                     <button type="submit" class="btn primary" style="width: 100%;">Войти</button>
                 </form>
                 
                 <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
-                    <strong>Для тестирования:</strong><br>
-                    Добавьте пользователя в Google Sheets → Лист "Users"
+                    <strong>Тестовый доступ:</strong><br>
+                    Любой email и пароль
                 </div>
                 
                 <div id="loginStatus" class="status"></div>
@@ -394,8 +264,8 @@ class RestaurantOrderApp {
                 </div>
                 
                 <div class="notifications">
-                    <h3>📡 Режим реальных данных</h3>
-                    <p>Приложение подключено к Google Sheets и Telegram. Все данные сохраняются в реальном времени.</p>
+                    <h3>🚀 Режим реального API</h3>
+                    <p>Приложение подключено к Google Apps Script. Все операции выполняются в реальном времени.</p>
                 </div>
             </div>
         `;
@@ -475,16 +345,6 @@ class RestaurantOrderApp {
             }
         });
         
-        if (!hasProducts) {
-            productsHtml = `
-                <div style="text-align: center; padding: 40px; color: #7f8c8d;">
-                    <div style="font-size: 3rem; margin-bottom: 20px;">📦</div>
-                    <h3>Товары не найдены</h3>
-                    <p>Добавьте товары в таблицу Products в Google Sheets</p>
-                </div>
-            `;
-        }
-        
         return `
             <div class="order-screen">
                 <header class="header">
@@ -494,11 +354,9 @@ class RestaurantOrderApp {
                 
                 ${productsHtml}
                 
-                ${hasProducts ? `
-                    <button class="btn primary" onclick="app.submitOrder('${data.templateName}')" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 18px;">
-                        📨 Отправить заявку поставщикам
-                    </button>
-                ` : ''}
+                <button class="btn primary" onclick="app.submitOrder('${data.templateName}')" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 18px;">
+                    📨 Отправить заявку поставщикам
+                </button>
                 
                 <div id="orderStatus" class="status"></div>
             </div>
@@ -593,8 +451,6 @@ class RestaurantOrderApp {
                 }, 4000);
             }
         }
-        
-        console.log(`${type}: ${message}`);
     }
 
     // Настройка обработчиков событий
