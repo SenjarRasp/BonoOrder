@@ -39,39 +39,34 @@ class RestaurantOrderApp {
 
     // ВРЕМЕННЫЙ API CALL для отладки
     async apiCall(action, data = {}) {
-        console.log('📡 API Call:', action, data);
+    console.log('📡 API Call:', action, data);
+    
+    try {
+        const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                ...data
+            })
+        });
         
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: action,
-                    ...data
-                })
-            });
-            
-            console.log('✅ Response status:', response.status);
-            console.log('✅ Response headers:', response.headers);
-            
-            const result = await response.text();
-            console.log('✅ Response text:', result);
-            
-            const jsonResult = JSON.parse(result);
-            
-            if (jsonResult.status === 'success') {
-                return jsonResult.data;
-            } else {
-                throw new Error(jsonResult.message);
-            }
-            
-        } catch (error) {
-            console.error('❌ API Error:', error);
-            throw new Error('Ошибка соединения: ' + error.message);
+        const result = await response.json();
+        console.log('✅ API Response:', result);
+        
+        if (result.status === 'success') {
+            return result.data;
+        } else {
+            throw new Error(result.message);
         }
+        
+    } catch (error) {
+        console.error('❌ API Error:', error);
+        throw new Error('Ошибка соединения: ' + error.message);
     }
+}
 
     // ОБНОВЛЕННАЯ настройка PWA с правильными путями
     setupPWA() {
@@ -609,5 +604,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
