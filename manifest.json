@@ -1,8 +1,8 @@
 {
   "name": "Restaurant Orders",
-  "short_name": "RstOrders",
-  "description": "‘истема управлениЯ заЯвками длЯ ресторана",
-  "start_url": "/",
+  "short_name": "RstOrders", 
+  "description": "РЎРёСЃС‚РµРјР° СѓРїСЂР°РІР»РµРЅРёСЏ Р·Р°СЏРІРєР°РјРё РґР»СЏ СЂРµСЃС‚РѕСЂР°РЅР°",
+  "start_url": "/BonoOrder/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#e74c3c",
