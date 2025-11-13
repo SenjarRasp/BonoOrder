@@ -5,7 +5,7 @@ class RestaurantOrderApp {
             : '/';
         
         // Замените на ваш реальный URL Google Apps Script
-        this.apiUrl = 'https://script.google.com/macros/s/ВАШ_SCRIPT_ID/exec';
+        this.apiUrl = 'https://script.google.com/macros/s/AKfycbyRbvBN86m1RrLdvHtrlsN5JYL4qMFGF3mIwsESxXVSmpZZEHF1i8L-QQ4Ec6YVZWSF4g/exec';
         this.currentUser = null;
         this.currentScreen = 'login';
         this.ordersHistory = [];
@@ -438,3 +438,4 @@ document.head.appendChild(styleSheet);
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
