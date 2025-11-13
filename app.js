@@ -97,7 +97,6 @@ class RestaurantOrderApp {
             const mainScreen = appElement.querySelector('.main-screen');
             if (mainScreen) {
                 mainScreen.insertBefore(installSection, mainScreen.firstChild);
-                
                 document.getElementById('installBtn').onclick = () => this.installPWA();
                 document.getElementById('laterBtn').onclick = () => {
                     installSection.remove();
@@ -612,3 +611,4 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
