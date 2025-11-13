@@ -37,7 +37,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // РЕАЛЬНЫЙ API CALL
+    // ВРЕМЕННЫЙ API CALL для отладки
     async apiCall(action, data = {}) {
         console.log('📡 API Call:', action, data);
         
@@ -53,12 +53,18 @@ class RestaurantOrderApp {
                 })
             });
             
-            const result = await response.json();
+            console.log('✅ Response status:', response.status);
+            console.log('✅ Response headers:', response.headers);
             
-            if (result.status === 'success') {
-                return result.data;
+            const result = await response.text();
+            console.log('✅ Response text:', result);
+            
+            const jsonResult = JSON.parse(result);
+            
+            if (jsonResult.status === 'success') {
+                return jsonResult.data;
             } else {
-                throw new Error(result.message);
+                throw new Error(jsonResult.message);
             }
             
         } catch (error) {
@@ -603,4 +609,5 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
