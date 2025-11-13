@@ -22,12 +22,12 @@ class RestaurantOrderApp {
     // Тест подключения
     async testConnection() {
         try {
-            console.log('Testing API connection...');
+            console.log('🔌 Testing API connection...');
             const response = await fetch(this.apiUrl);
             const result = await response.json();
             console.log('✅ API connection successful:', result);
         } catch (error) {
-            console.log('⚠️ API connection test failed, but continuing...');
+            console.log('⚠️ API test failed, but continuing...');
         }
     }
 
@@ -67,7 +67,6 @@ class RestaurantOrderApp {
         try {
             this.showNotification('loading', 'Вход в систему...');
             
-            // Для тестирования - используем любые данные
             if (!email || !password) {
                 throw new Error('Введите email и пароль');
             }
@@ -85,11 +84,11 @@ class RestaurantOrderApp {
     async loadTemplateProducts(templateId) {
         try {
             this.showNotification('loading', 'Загрузка товаров...');
-            const result = await this.apiCall('get_products', { templateId });
+            const result = await this.apiCall('get_products');
             
             this.renderScreen('order_creation', { 
                 templateId, 
-                templateName: result.template_name || 'Шаблон',
+                templateName: result.template_name || 'Заявка',
                 products: result.grouped_products 
             });
         } catch (error) {
@@ -157,8 +156,7 @@ class RestaurantOrderApp {
                     product_name: productName,
                     quantity: quantity,
                     unit: productUnit,
-                    comment: commentInput ? commentInput.value : '',
-                    suppliers: [1]
+                    comment: commentInput ? commentInput.value : ''
                 });
             }
         });
@@ -224,7 +222,7 @@ class RestaurantOrderApp {
                 
                 <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
                     <strong>Тестовый доступ:</strong><br>
-                    Любой email и пароль
+                    Используйте любые email и пароль
                 </div>
                 
                 <div id="loginStatus" class="status"></div>
@@ -310,11 +308,9 @@ class RestaurantOrderApp {
         }
         
         let productsHtml = '';
-        let hasProducts = false;
         
         Object.keys(data.products).forEach(dept => {
             if (data.products[dept].length > 0) {
-                hasProducts = true;
                 productsHtml += `
                     <div class="department-group">
                         <div class="department-header">${dept.toUpperCase()}</div>
