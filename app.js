@@ -22,53 +22,100 @@ class RestaurantOrderApp {
         this.testConnection();
     }
 
-    // ТЕСТ ПОДКЛЮЧЕНИЯ
+    // ТЕСТ ПОДКЛЮЧЕНИЯ с JSONP
     async testConnection() {
         try {
             console.log('Testing API connection...');
-            // Простой тест - попробуем получить продукты
-            await this.apiCall('get_products', { templateId: 1 });
-            console.log('✅ API connection successful');
+            const result = await this.jsonpCall('test');
+            console.log('✅ API connection successful:', result);
         } catch (error) {
             console.log('❌ API connection failed:', error);
             this.showNotification('error', 
-                'Ошибка подключения к серверу. Проверьте настройки Google Apps Script.'
+                'Ошибка подключения к серверу. Используем режим ожидания...'
             );
         }
     }
 
-    // ВРЕМЕННЫЙ API CALL для отладки
-    async apiCall(action, data = {}) {
-    console.log('📡 API Call:', action, data);
-    
-    try {
-        const response = await fetch(this.apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: action,
-                ...data
-            })
+    // JSONP CALL для обхода CORS
+    jsonpCall(action, data = {}) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+            
+            // Создаем script элемент
+            const script = document.createElement('script');
+            
+            // Подготавливаем URL
+            const url = new URL(this.apiUrl);
+            url.searchParams.set('action', action);
+            url.searchParams.set('callback', callbackName);
+            
+            // Добавляем данные
+            Object.keys(data).forEach(key => {
+                url.searchParams.set(key, JSON.stringify(data[key]));
+            });
+            
+            // Глобальная callback функция
+            window[callbackName] = (response) => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                
+                if (response.status === 'success') {
+                    resolve(response.data);
+                } else {
+                    reject(new Error(response.message));
+                }
+            };
+            
+            // Обработка ошибок
+            script.onerror = () => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                reject(new Error('Network error'));
+            };
+            
+            script.src = url.toString();
+            document.body.appendChild(script);
         });
-        
-        const result = await response.json();
-        console.log('✅ API Response:', result);
-        
-        if (result.status === 'success') {
-            return result.data;
-        } else {
-            throw new Error(result.message);
-        }
-        
-    } catch (error) {
-        console.error('❌ API Error:', error);
-        throw new Error('Ошибка соединения: ' + error.message);
     }
-}
 
-    // ОБНОВЛЕННАЯ настройка PWA с правильными путями
+    // API CALL с fetch и fallback на JSONP
+    async apiCall(action, data = {}) {
+        console.log('📡 API Call:', action, data);
+        
+        try {
+            // Пробуем обычный fetch
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: action,
+                    ...data
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                return result.data;
+            } else {
+                throw new Error(result.message);
+            }
+            
+        } catch (fetchError) {
+            console.log('Fetch failed, trying JSONP...', fetchError);
+            
+            // Fallback на JSONP
+            try {
+                return await this.jsonpCall(action, data);
+            } catch (jsonpError) {
+                throw new Error(`API Error: ${jsonpError.message}`);
+            }
+        }
+    }
+
+    // ОБНОВЛЕННАЯ настройка PWA
     setupPWA() {
         // Регистрация Service Worker с правильным путем
         if ('serviceWorker' in navigator) {
@@ -80,8 +127,6 @@ class RestaurantOrderApp {
                 })
                 .catch((error) => {
                     console.log('Ошибка SW, продолжаем без него:', error);
-                    // Создаем заглушку если файла нет
-                    this.createFallbackSW();
                 });
         }
         
@@ -91,39 +136,16 @@ class RestaurantOrderApp {
             e.preventDefault();
             this.deferredPrompt = e;
             
-            // Показываем кнопку установки через 3 секунды
             if (!this.installPromptShown) {
                 setTimeout(() => this.showInstallPrompt(), 3000);
                 this.installPromptShown = true;
             }
         });
 
-        // Отслеживание успешной установки
         window.addEventListener('appinstalled', (evt) => {
             console.log('PWA успешно установлено');
             this.deferredPrompt = null;
         });
-    }
-
-    // Создание заглушки если SW файла нет
-    createFallbackSW() {
-        const blob = new Blob([
-            `self.addEventListener('install', (e) => { 
-                self.skipWaiting(); 
-            });
-            self.addEventListener('activate', (e) => {
-                e.waitUntil(self.clients.claim());
-            });
-            self.addEventListener('fetch', (e) => {
-                e.respondWith(fetch(e.request));
-            });`
-        ], { type: 'application/javascript' });
-        
-        const swUrl = URL.createObjectURL(blob);
-        
-        navigator.serviceWorker.register(swUrl)
-            .then(reg => console.log('Fallback SW registered'))
-            .catch(err => console.log('Fallback SW failed:', err));
     }
 
     // Показ промпта установки
@@ -163,14 +185,13 @@ class RestaurantOrderApp {
             
             if (outcome === 'accepted') {
                 this.deferredPrompt = null;
-                // Скрываем промпт после установки
                 const installPrompt = document.querySelector('.install-prompt');
                 if (installPrompt) installPrompt.remove();
             }
         }
     }
 
-    // ОБРАБОТКА ЛОГИНА С РЕАЛЬНЫМИ ДАННЫМИ
+    // ОБРАБОТКА ЛОГИНА
     async handleLogin(email, password) {
         try {
             this.showNotification('loading', 'Вход в систему...');
@@ -182,7 +203,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // ЗАГРУЗКА РЕАЛЬНЫХ ТОВАРОВ
+    // ЗАГРУЗКА ТОВАРОВ
     async loadTemplateProducts(templateId) {
         try {
             this.showNotification('loading', 'Загрузка товаров...');
@@ -198,7 +219,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // ОТПРАВКА РЕАЛЬНОЙ ЗАЯВКИ
+    // ОТПРАВКА ЗАЯВКИ
     async submitOrder(templateName) {
         try {
             const items = this.collectOrderItems();
@@ -234,7 +255,6 @@ class RestaurantOrderApp {
                 `📧 Уведомления отправлены ${successCount} из ${totalCount} поставщиков`
             );
             
-            // Возвращаем на главный экран через 3 секунды
             setTimeout(() => {
                 this.renderScreen('main');
             }, 3000);
@@ -264,7 +284,7 @@ class RestaurantOrderApp {
                     quantity: quantity,
                     unit: productUnit,
                     comment: commentInput ? commentInput.value : '',
-                    suppliers: [1, 2] // Базовые поставщики
+                    suppliers: [1, 2]
                 });
             }
         });
@@ -309,7 +329,6 @@ class RestaurantOrderApp {
                 break;
         }
 
-        // После рендера обновляем промпт установки
         if (screenName === 'main' && this.deferredPrompt && !this.installPromptShown) {
             setTimeout(() => this.showInstallPrompt(), 1000);
         }
@@ -334,8 +353,8 @@ class RestaurantOrderApp {
                 </form>
                 
                 <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
-                    <strong>Тестовые данные из Google Sheets:</strong><br>
-                    Используйте данные из таблицы Users
+                    <strong>Для тестирования:</strong><br>
+                    Добавьте пользователя в Google Sheets → Лист "Users"
                 </div>
                 
                 <div id="loginStatus" class="status"></div>
@@ -396,21 +415,18 @@ class RestaurantOrderApp {
                         <div class="template-icon">📅</div>
                         <h3>Ежедневная закупка</h3>
                         <p>Основные позиции для ежедневных нужд</p>
-                        <small style="color: #27ae60;">Товары из таблицы Products</small>
                     </div>
                     
                     <div class="template-card" onclick="app.loadTemplateProducts(2)">
                         <div class="template-icon">📦</div>
                         <h3>Еженедельная закупка</h3>
                         <p>Полный набор товаров на неделю</p>
-                        <small style="color: #2980b9;">Все категории товаров</small>
                     </div>
                     
                     <div class="template-card" onclick="app.loadTemplateProducts(3)">
                         <div class="template-icon">🚨</div>
                         <h3>Срочная закупка</h3>
                         <p>Экспресс-заказ критичных позиций</p>
-                        <small style="color: #e74c3c;">Срочные поставки</small>
                     </div>
                 </div>
             </div>
@@ -545,7 +561,6 @@ class RestaurantOrderApp {
                 statusElement = document.getElementById('orderStatus');
                 break;
             default:
-                // Создаем временное уведомление
                 const tempDiv = document.createElement('div');
                 tempDiv.className = `status ${type}`;
                 tempDiv.textContent = message;
@@ -604,6 +619,3 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
-
-
-
