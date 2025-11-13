@@ -309,7 +309,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // Рендер экранов (остается без изменений)
+    // Рендер экранов
     renderScreen(screenName, data = null) {
         this.currentScreen = screenName;
         const app = document.getElementById('app');
