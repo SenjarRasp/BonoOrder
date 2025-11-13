@@ -1,0 +1,17 @@
+{
+  "name": "Restaurant Orders",
+  "short_name": "RstOrders",
+  "description": "Система управления заявками для ресторана",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e74c3c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiNlNzRjM2MiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNNzIgNzJINjRWODBINzJWODhINjRWOTZINzJWODhINjRWNzJINzJaTTEyOCA3MkgxMjBWODBIMTI4Vjg4SDEyMFY5NkgxMjhWODhIMTI4VjcyWk0xMjggNjRIMTIwVjcySDEyOFY2NFpNMTI4IDk2SDEyMFYxMDRIMTI4Vjk2Wk04OCA4OEg5NlY5Nkg4OFY4OFpNODggODBIOThWODhIODhWODBaTTg4IDcySDk2VjgwSDg4VjcyWk04OCA2NEg5NlY3Mkg4OFY2NFpNMTI4IDU2SDEyMFY2NEgxMjhWNjRaTTE2MCA4OEgxNjhWOTZIMTYwVjg4Wk0xNjAgODBIMTY4Vjg4SDE2MFY4MFpNMTYwIDcySDE2OFY4MEgxNjBWNzJaTTE2MCA2NEgxNjhWNzJIMTYwVjY0WiIvPgo8L3N2Zz4KPC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
