@@ -4,7 +4,7 @@ class RestaurantOrderApp {
             ? '/BonoOrder/' 
             : '/';
         
-        // Замените на ваш реальный URL Google Apps Script
+        // РЕАЛЬНЫЙ API URL
         this.apiUrl = 'https://script.google.com/macros/s/AKfycbyRbvBN86m1RrLdvHtrlsN5JYL4qMFGF3mIwsESxXVSmpZZEHF1i8L-QQ4Ec6YVZWSF4g/exec';
         this.currentUser = null;
         this.currentScreen = 'login';
@@ -19,15 +19,27 @@ class RestaurantOrderApp {
         this.renderScreen('login');
         this.setupEventListeners();
         this.setupPWA();
+        this.testConnection();
     }
 
-    // Реальный API вызов
-    async apiCall(action, data = {}) {
-        // Если URL не настроен, используем мок
-        if (this.apiUrl.includes('ВАШ_SCRIPT_ID')) {
-            console.log('Используем мок данные - настройте API URL');
-            return this.mockApiCall(action, data);
+    // ТЕСТ ПОДКЛЮЧЕНИЯ
+    async testConnection() {
+        try {
+            console.log('Testing API connection...');
+            // Простой тест - попробуем получить продукты
+            await this.apiCall('get_products', { templateId: 1 });
+            console.log('✅ API connection successful');
+        } catch (error) {
+            console.log('❌ API connection failed:', error);
+            this.showNotification('error', 
+                'Ошибка подключения к серверу. Проверьте настройки Google Apps Script.'
+            );
         }
+    }
+
+    // РЕАЛЬНЫЙ API CALL
+    async apiCall(action, data = {}) {
+        console.log('📡 API Call:', action, data);
         
         try {
             const response = await fetch(this.apiUrl, {
@@ -50,154 +62,118 @@ class RestaurantOrderApp {
             }
             
         } catch (error) {
-            console.error('API Error:', error);
-            // При ошибке используем мок
-            return this.mockApiCall(action, data);
+            console.error('❌ API Error:', error);
+            throw new Error('Ошибка соединения: ' + error.message);
         }
     }
 
-    // Улучшенный мок с реальными данными
-    mockApiCall(action, data) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                switch(action) {
-                    case 'login':
-                        const users = {
-                            'chef@restaurant.ru': { department: 'кухня', position: 'шеф-повар' },
-                            'barman@restaurant.ru': { department: 'бар', position: 'старший бармен' },
-                            'manager@restaurant.ru': { department: 'зал', position: 'менеджер' },
-                            'admin@restaurant.ru': { department: 'все', position: 'администратор' }
-                        };
-                        
-                        if (users[data.email] && data.password === '123456') {
-                            resolve({
-                                user: { 
-                                    email: data.email, 
-                                    ...users[data.email]
-                                },
-                                token: 'mock_token_' + Date.now()
-                            });
-                        } else {
-                            reject(new Error('Неверный email или пароль'));
-                        }
-                        break;
-                        
-                    case 'get_products':
-                        const templates = {
-                            1: { // Ежедневная
-                                name: 'Ежедневная закупка',
-                                products: {
-                                    'кухня': [
-                                        { id: 1, name: 'Картофель', unit: 'кг', min_stock: 50, suppliers: [1] },
-                                        { id: 2, name: 'Морковь', unit: 'кг', min_stock: 20, suppliers: [1] },
-                                        { id: 3, name: 'Лук репчатый', unit: 'кг', min_stock: 15, suppliers: [1] },
-                                        { id: 4, name: 'Говядина вырезка', unit: 'кг', min_stock: 25, suppliers: [2] },
-                                        { id: 5, name: 'Курица филе', unit: 'кг', min_stock: 20, suppliers: [2] }
-                                    ]
-                                }
-                            },
-                            2: { // Еженедельная
-                                name: 'Еженедельная закупка',
-                                products: {
-                                    'кухня': [
-                                        { id: 1, name: 'Картофель', unit: 'кг', min_stock: 50, suppliers: [1] },
-                                        { id: 2, name: 'Морковь', unit: 'кг', min_stock: 20, suppliers: [1] },
-                                        { id: 4, name: 'Говядина вырезка', unit: 'кг', min_stock: 25, suppliers: [2] },
-                                        { id: 6, name: 'Лосось', unit: 'кг', min_stock: 10, suppliers: [2] }
-                                    ],
-                                    'бар': [
-                                        { id: 7, name: 'Виски Jack Daniels', unit: 'шт', min_stock: 5, suppliers: [3] },
-                                        { id: 8, name: 'Водка Русский Стандарт', unit: 'шт', min_stock: 10, suppliers: [3] },
-                                        { id: 9, name: 'Тоник Schweppes', unit: 'л', min_stock: 12, suppliers: [4] },
-                                        { id: 10, name: 'Кофе в зернах', unit: 'кг', min_stock: 8, suppliers: [4] }
-                                    ],
-                                    'зал': [
-                                        { id: 11, name: 'Салфетки бумажные', unit: 'уп', min_stock: 20, suppliers: [5] },
-                                        { id: 12, name: 'Свечи декоративные', unit: 'шт', min_stock: 30, suppliers: [5] }
-                                    ]
-                                }
-                            },
-                            3: { // Срочная
-                                name: 'Срочная закупка',
-                                products: {
-                                    'кухня': [
-                                        { id: 1, name: 'Картофель', unit: 'кг', min_stock: 50, suppliers: [1] },
-                                        { id: 4, name: 'Говядина вырезка', unit: 'кг', min_stock: 25, suppliers: [2] }
-                                    ],
-                                    'бар': [
-                                        { id: 7, name: 'Виски Jack Daniels', unit: 'шт', min_stock: 5, suppliers: [3] },
-                                        { id: 9, name: 'Тоник Schweppes', unit: 'л', min_stock: 12, suppliers: [4] }
-                                    ]
-                                }
-                            }
-                        };
-                        
-                        const templateData = templates[data.templateId];
-                        if (templateData) {
-                            resolve({
-                                grouped_products: templateData.products,
-                                template_name: templateData.name
-                            });
-                        } else {
-                            reject(new Error('Шаблон не найден'));
-                        }
-                        break;
-                        
-                    case 'create_order':
-                        const orderId = 'ORD_' + Math.random().toString(36).substr(2, 8).toUpperCase();
-                        const suppliers = [
-                            { name: 'ООО "Свежие Овощи"', status: 'success' },
-                            { name: 'ООО "Мясной Двор"', status: 'success' },
-                            { name: 'ООО "Алкогольные Напитки"', status: 'success' },
-                            { name: 'ООО "Бакалея"', status: 'success' },
-                            { name: 'ООО "Ресторанные Поставки"', status: 'success' }
-                        ];
-                        
-                        // Определяем задействованных поставщиков
-                        const involvedSuppliers = [...new Set(data.items.flatMap(item => item.suppliers))];
-                        const sendResults = suppliers.filter(s => involvedSuppliers.includes(suppliers.indexOf(s) + 1));
-                        
-                        resolve({ 
-                            order_id: orderId,
-                            send_results: sendResults,
-                            timestamp: new Date().toISOString()
-                        });
-                        break;
-                        
-                    case 'get_order_history':
-                        resolve(this.ordersHistory);
-                        break;
-                        
-                    case 'get_dashboard_data':
-                        resolve({
-                            total_orders: this.ordersHistory.length,
-                            recent_orders: this.ordersHistory.filter(order => 
-                                new Date(order.date) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                            ).length,
-                            pending_orders: 0,
-                            last_order: this.ordersHistory[0] || null
-                        });
-                        break;
-                        
-                    default:
-                        reject(new Error('Unknown action'));
-                }
-            }, 1000);
+    // ОБНОВЛЕННАЯ настройка PWA с правильными путями
+    setupPWA() {
+        // Регистрация Service Worker с правильным путем
+        if ('serviceWorker' in navigator) {
+            const swPath = `${this.basePath}sw.js`;
+            
+            navigator.serviceWorker.register(swPath)
+                .then((registration) => {
+                    console.log('Service Worker зарегистрирован:', registration);
+                })
+                .catch((error) => {
+                    console.log('Ошибка SW, продолжаем без него:', error);
+                    // Создаем заглушку если файла нет
+                    this.createFallbackSW();
+                });
+        }
+        
+        // Обработчик установки PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA можно установить');
+            e.preventDefault();
+            this.deferredPrompt = e;
+            
+            // Показываем кнопку установки через 3 секунды
+            if (!this.installPromptShown) {
+                setTimeout(() => this.showInstallPrompt(), 3000);
+                this.installPromptShown = true;
+            }
+        });
+
+        // Отслеживание успешной установки
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA успешно установлено');
+            this.deferredPrompt = null;
         });
     }
 
-    // Обработка логина
+    // Создание заглушки если SW файла нет
+    createFallbackSW() {
+        const blob = new Blob([
+            `self.addEventListener('install', (e) => { 
+                self.skipWaiting(); 
+            });
+            self.addEventListener('activate', (e) => {
+                e.waitUntil(self.clients.claim());
+            });
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(fetch(e.request));
+            });`
+        ], { type: 'application/javascript' });
+        
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl)
+            .then(reg => console.log('Fallback SW registered'))
+            .catch(err => console.log('Fallback SW failed:', err));
+    }
+
+    // Показ промпта установки
+    showInstallPrompt() {
+        if (this.deferredPrompt && this.currentScreen === 'main') {
+            const installSection = document.createElement('div');
+            installSection.className = 'install-prompt';
+            installSection.innerHTML = `
+                <div style="background: #e8f5e8; border: 2px solid #4caf50; border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center;">
+                    <h3 style="margin: 0 0 10px 0; color: #2e7d32;">📱 Установить приложение</h3>
+                    <p style="margin: 0 0 15px 0; color: #555;">Установите приложение для быстрого доступа</p>
+                    <button class="btn primary" id="installBtn" style="margin: 5px;">Установить</button>
+                    <button class="btn secondary" id="laterBtn" style="margin: 5px;">Позже</button>
+                </div>
+            `;
+            
+            const appElement = document.getElementById('app');
+            const mainScreen = appElement.querySelector('.main-screen');
+            if (mainScreen) {
+                mainScreen.insertBefore(installSection, mainScreen.firstChild);
+                
+                document.getElementById('installBtn').onclick = () => this.installPWA();
+                document.getElementById('laterBtn').onclick = () => {
+                    installSection.remove();
+                    this.installPromptShown = false;
+                };
+            }
+        }
+    }
+
+    // Установка PWA
+    async installPWA() {
+        if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            console.log(`User response: ${outcome}`);
+            
+            if (outcome === 'accepted') {
+                this.deferredPrompt = null;
+                // Скрываем промпт после установки
+                const installPrompt = document.querySelector('.install-prompt');
+                if (installPrompt) installPrompt.remove();
+            }
+        }
+    }
+
+    // ОБРАБОТКА ЛОГИНА С РЕАЛЬНЫМИ ДАННЫМИ
     async handleLogin(email, password) {
         try {
             this.showNotification('loading', 'Вход в систему...');
             this.currentUser = await this.apiCall('login', { email, password });
-            
-            // Загружаем данные дашборда
-            const dashboardData = await this.apiCall('get_dashboard_data', {
-                userEmail: this.currentUser.email
-            });
-            this.dashboardData = dashboardData;
-            
             this.renderScreen('main');
             this.showNotification('success', `Добро пожаловать, ${this.currentUser.position}!`);
         } catch (error) {
@@ -205,15 +181,169 @@ class RestaurantOrderApp {
         }
     }
 
-    // Обновленный рендер главного экрана с дашбордом
-    renderMainScreen() {
-        const stats = this.dashboardData || {
-            total_orders: 0,
-            recent_orders: 0,
-            pending_orders: 0,
-            last_order: null
-        };
+    // ЗАГРУЗКА РЕАЛЬНЫХ ТОВАРОВ
+    async loadTemplateProducts(templateId) {
+        try {
+            this.showNotification('loading', 'Загрузка товаров...');
+            const result = await this.apiCall('get_products', { templateId });
+            
+            this.renderScreen('order_creation', { 
+                templateId, 
+                templateName: result.template_name || 'Шаблон',
+                products: result.grouped_products 
+            });
+        } catch (error) {
+            this.showNotification('error', 'Ошибка загрузки товаров: ' + error.message);
+        }
+    }
+
+    // ОТПРАВКА РЕАЛЬНОЙ ЗАЯВКИ
+    async submitOrder(templateName) {
+        try {
+            const items = this.collectOrderItems();
+            
+            if (items.length === 0) {
+                this.showNotification('error', 'Добавьте хотя бы один товар в заявку');
+                return;
+            }
+            
+            this.showNotification('loading', 'Отправка заявки поставщикам...');
+            
+            const result = await this.apiCall('create_order', {
+                userEmail: this.currentUser.email,
+                templateName: templateName,
+                items: items
+            });
+            
+            // Сохраняем в историю
+            this.ordersHistory.unshift({
+                order_id: result.order_id,
+                date: result.timestamp || new Date().toISOString(),
+                template: templateName,
+                status: 'success',
+                items_count: items.length
+            });
+            
+            // Показываем результаты отправки
+            const successCount = result.send_results.filter(r => r.status === 'success').length;
+            const totalCount = result.send_results.length;
+            
+            this.showNotification('success', 
+                `✅ Заявка ${result.order_id} отправлена!\n` +
+                `📧 Уведомления отправлены ${successCount} из ${totalCount} поставщиков`
+            );
+            
+            // Возвращаем на главный экран через 3 секунды
+            setTimeout(() => {
+                this.renderScreen('main');
+            }, 3000);
+            
+        } catch (error) {
+            this.showNotification('error', 'Ошибка отправки: ' + error.message);
+        }
+    }
+
+    // Сбор данных из формы заявки
+    collectOrderItems() {
+        const items = [];
+        const quantityInputs = document.querySelectorAll('.quantity-input');
         
+        quantityInputs.forEach(input => {
+            const quantity = parseInt(input.value);
+            if (quantity > 0) {
+                const productId = input.dataset.productId;
+                const commentInput = document.querySelector(`.comment-input[data-product-id="${productId}"]`);
+                const productElement = input.closest('.product-item');
+                const productName = productElement.querySelector('.product-name').textContent;
+                const productUnit = productElement.querySelector('.product-unit').textContent;
+                
+                items.push({
+                    product_id: productId,
+                    product_name: productName,
+                    quantity: quantity,
+                    unit: productUnit,
+                    comment: commentInput ? commentInput.value : '',
+                    suppliers: [1, 2] // Базовые поставщики
+                });
+            }
+        });
+        
+        return items;
+    }
+
+    // Загрузка истории заявок
+    async loadOrderHistory() {
+        try {
+            this.showNotification('loading', 'Загрузка истории...');
+            this.ordersHistory = await this.apiCall('get_order_history', {
+                userEmail: this.currentUser.email
+            });
+            this.renderScreen('order_history');
+        } catch (error) {
+            this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
+            this.renderScreen('order_history');
+        }
+    }
+
+    // Рендер экранов
+    renderScreen(screenName, data = null) {
+        this.currentScreen = screenName;
+        const app = document.getElementById('app');
+        
+        switch(screenName) {
+            case 'login':
+                app.innerHTML = this.renderLoginScreen();
+                break;
+            case 'main':
+                app.innerHTML = this.renderMainScreen();
+                break;
+            case 'template_selection':
+                app.innerHTML = this.renderTemplateSelectionScreen();
+                break;
+            case 'order_creation':
+                app.innerHTML = this.renderOrderCreationScreen(data);
+                break;
+            case 'order_history':
+                app.innerHTML = this.renderOrderHistoryScreen();
+                break;
+        }
+
+        // После рендера обновляем промпт установки
+        if (screenName === 'main' && this.deferredPrompt && !this.installPromptShown) {
+            setTimeout(() => this.showInstallPrompt(), 1000);
+        }
+    }
+
+    // Рендер экрана логина
+    renderLoginScreen() {
+        return `
+            <div class="login-screen">
+                <div class="logo">🍽️</div>
+                <h1>Restaurant Orders</h1>
+                <p style="color: #7f8c8d; margin-bottom: 30px; text-align: center;">Система управления заявками</p>
+                
+                <form id="loginForm" class="form">
+                    <div class="input-group">
+                        <input type="email" id="email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder="Пароль" required>
+                    </div>
+                    <button type="submit" class="btn primary" style="width: 100%;">Войти</button>
+                </form>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
+                    <strong>Тестовые данные из Google Sheets:</strong><br>
+                    Используйте данные из таблицы Users
+                </div>
+                
+                <div id="loginStatus" class="status"></div>
+            </div>
+        `;
+    }
+
+    // Рендер главного экрана
+    renderMainScreen() {
         return `
             <div class="main-screen">
                 <header class="header">
@@ -222,34 +352,6 @@ class RestaurantOrderApp {
                         ${this.currentUser.department} • ${this.currentUser.position}
                     </div>
                 </header>
-                
-                <!-- Статистика -->
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_orders}</div>
-                        <div class="stat-label">Всего заявок</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.recent_orders}</div>
-                        <div class="stat-label">За 7 дней</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.pending_orders}</div>
-                        <div class="stat-label">В обработке</div>
-                    </div>
-                </div>
-                
-                <!-- Последняя заявка -->
-                ${stats.last_order ? `
-                    <div class="recent-order">
-                        <h3>Последняя заявка</h3>
-                        <div class="order-preview">
-                            <strong>${stats.last_order.order_id}</strong>
-                            <span>${new Date(stats.last_order.date).toLocaleDateString('ru-RU')}</span>
-                            <span>${stats.last_order.template}</span>
-                        </div>
-                    </div>
-                ` : ''}
                 
                 <div class="actions-grid">
                     <div class="action-card" onclick="app.renderScreen('template_selection')">
@@ -270,172 +372,234 @@ class RestaurantOrderApp {
                         <p>Завершить сеанс</p>
                     </div>
                 </div>
+                
+                <div class="notifications">
+                    <h3>📡 Режим реальных данных</h3>
+                    <p>Приложение подключено к Google Sheets и Telegram. Все данные сохраняются в реальном времени.</p>
+                </div>
             </div>
         `;
     }
 
-    // Обновленный экран создания заявки с минимальным запасом
+    // Рендер экрана выбора шаблона
+    renderTemplateSelectionScreen() {
+        return `
+            <div class="template-screen">
+                <header class="header">
+                    <button class="back-btn" onclick="app.renderScreen('main')">← Назад</button>
+                    <h1>Выбор шаблона</h1>
+                </header>
+                
+                <div class="templates-grid">
+                    <div class="template-card" onclick="app.loadTemplateProducts(1)">
+                        <div class="template-icon">📅</div>
+                        <h3>Ежедневная закупка</h3>
+                        <p>Основные позиции для ежедневных нужд</p>
+                        <small style="color: #27ae60;">Товары из таблицы Products</small>
+                    </div>
+                    
+                    <div class="template-card" onclick="app.loadTemplateProducts(2)">
+                        <div class="template-icon">📦</div>
+                        <h3>Еженедельная закупка</h3>
+                        <p>Полный набор товаров на неделю</p>
+                        <small style="color: #2980b9;">Все категории товаров</small>
+                    </div>
+                    
+                    <div class="template-card" onclick="app.loadTemplateProducts(3)">
+                        <div class="template-icon">🚨</div>
+                        <h3>Срочная закупка</h3>
+                        <p>Экспресс-заказ критичных позиций</p>
+                        <small style="color: #e74c3c;">Срочные поставки</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Рендер экрана создания заявки
     renderOrderCreationScreen(data) {
         if (!data || !data.products) {
             return this.renderTemplateSelectionScreen();
         }
         
         let productsHtml = '';
+        let hasProducts = false;
         
         Object.keys(data.products).forEach(dept => {
-            productsHtml += `
-                <div class="department-group">
-                    <div class="department-header">
-                        ${dept.toUpperCase()}
-                        <span class="department-badge">${data.products[dept].length} товаров</span>
-                    </div>
-            `;
-            
-            data.products[dept].forEach(product => {
+            if (data.products[dept].length > 0) {
+                hasProducts = true;
                 productsHtml += `
-                    <div class="product-item">
-                        <div class="product-info">
-                            <div class="product-name">${product.name}</div>
-                            <div class="product-details">
-                                <span class="product-unit">${product.unit}</span>
-                                ${product.min_stock ? 
-                                    `<span class="min-stock">мин: ${product.min_stock}</span>` : ''}
-                            </div>
-                        </div>
-                        <input type="number" 
-                               class="quantity-input" 
-                               min="0" 
-                               value="0" 
-                               data-product-id="${product.id}"
-                               placeholder="0"
-                               style="width: 80px;">
-                        <input type="text" 
-                               class="comment-input" 
-                               placeholder="Комментарий"
-                               data-product-id="${product.id}"
-                               style="flex: 1; margin-left: 10px;">
-                    </div>
+                    <div class="department-group">
+                        <div class="department-header">${dept.toUpperCase()}</div>
                 `;
-            });
-            
-            productsHtml += `</div>`;
+                
+                data.products[dept].forEach(product => {
+                    productsHtml += `
+                        <div class="product-item">
+                            <div class="product-info">
+                                <div class="product-name">${product.name}</div>
+                                <div class="product-unit">${product.unit}</div>
+                            </div>
+                            <input type="number" 
+                                   class="quantity-input" 
+                                   min="0" 
+                                   value="0" 
+                                   data-product-id="${product.id}"
+                                   placeholder="0">
+                            <input type="text" 
+                                   class="comment-input" 
+                                   placeholder="Комментарий"
+                                   data-product-id="${product.id}">
+                        </div>
+                    `;
+                });
+                
+                productsHtml += `</div>`;
+            }
         });
+        
+        if (!hasProducts) {
+            productsHtml = `
+                <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">📦</div>
+                    <h3>Товары не найдены</h3>
+                    <p>Добавьте товары в таблицу Products в Google Sheets</p>
+                </div>
+            `;
+        }
         
         return `
             <div class="order-screen">
                 <header class="header">
                     <button class="back-btn" onclick="app.renderScreen('template_selection')">← Назад</button>
-                    <h1>${data.template_name}</h1>
+                    <h1>${data.templateName}</h1>
                 </header>
-                
-                <div class="template-info">
-                    <p>Заполните количество для каждого товара. Указан минимальный запас для справки.</p>
-                </div>
                 
                 ${productsHtml}
                 
-                <div class="order-actions">
-                    <button class="btn primary" onclick="app.submitOrder('${data.template_name}')" style="width: 100%; padding: 15px; font-size: 18px;">
+                ${hasProducts ? `
+                    <button class="btn primary" onclick="app.submitOrder('${data.templateName}')" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 18px;">
                         📨 Отправить заявку поставщикам
                     </button>
-                </div>
+                ` : ''}
                 
                 <div id="orderStatus" class="status"></div>
             </div>
         `;
     }
 
-    // Остальные методы остаются аналогичными предыдущей версии
-    // ... (setupPWA, showInstallPrompt, installPWA, collectOrderItems, etc.)
-}
+    // Рендер экрана истории заявок
+    renderOrderHistoryScreen() {
+        let ordersHtml = '';
+        
+        if (this.ordersHistory.length === 0) {
+            ordersHtml = `
+                <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">📭</div>
+                    <h3>Заявок пока нет</h3>
+                    <p>Создайте первую заявку на главном экране</p>
+                </div>
+            `;
+        } else {
+            this.ordersHistory.forEach(order => {
+                ordersHtml += `
+                    <div class="order-item ${order.status}">
+                        <div class="order-header">
+                            <span class="order-id">${order.order_id}</span>
+                            <span class="order-date">${new Date(order.date).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        <div class="order-details">
+                            <span>${order.template}</span>
+                            <span>${order.items_count} товаров</span>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
+                            ✅ Успешно отправлена
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        return `
+            <div class="history-screen">
+                <header class="header">
+                    <button class="back-btn" onclick="app.renderScreen('main')">← Назад</button>
+                    <h1>История заявок</h1>
+                </header>
+                
+                ${ordersHtml}
+            </div>
+        `;
+    }
 
-// Добавьте эти стили в styles.css
-const additionalStyles = `
-.dashboard-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-}
+    // Показать уведомление
+    showNotification(type, message) {
+        let statusElement;
+        
+        switch(this.currentScreen) {
+            case 'login':
+                statusElement = document.getElementById('loginStatus');
+                break;
+            case 'order_creation':
+                statusElement = document.getElementById('orderStatus');
+                break;
+            default:
+                // Создаем временное уведомление
+                const tempDiv = document.createElement('div');
+                tempDiv.className = `status ${type}`;
+                tempDiv.textContent = message;
+                tempDiv.style.position = 'fixed';
+                tempDiv.style.top = '20px';
+                tempDiv.style.left = '50%';
+                tempDiv.style.transform = 'translateX(-50%)';
+                tempDiv.style.zIndex = '1000';
+                tempDiv.style.maxWidth = '90%';
+                tempDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                
+                document.body.appendChild(tempDiv);
+                
+                setTimeout(() => {
+                    if (document.body.contains(tempDiv)) {
+                        document.body.removeChild(tempDiv);
+                    }
+                }, 4000);
+                return;
+        }
+        
+        if (statusElement) {
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 4000);
+            }
+        }
+        
+        console.log(`${type}: ${message}`);
+    }
 
-.stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-}
+    // Настройка обработчиков событий
+    setupEventListeners() {
+        document.addEventListener('submit', (e) => {
+            if (e.target.id === 'loginForm') {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                this.handleLogin(email, password);
+            }
+        });
+    }
 
-.stat-number {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 5px;
+    // Выход из системы
+    logout() {
+        this.currentUser = null;
+        this.ordersHistory = [];
+        this.renderScreen('login');
+    }
 }
-
-.stat-label {
-    font-size: 12px;
-    opacity: 0.9;
-}
-
-.recent-order {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.recent-order h3 {
-    margin: 0 0 10px 0;
-    color: #2c3e50;
-}
-
-.order-preview {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-}
-
-.department-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.department-badge {
-    background: #3498db;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-}
-
-.product-details {
-    display: flex;
-    gap: 10px;
-    font-size: 12px;
-    color: #7f8c8d;
-}
-
-.min-stock {
-    color: #e74c3c;
-}
-
-.template-info {
-    background: #e8f4fd;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    font-size: 14px;
-    color: #2c3e50;
-}
-`;
-
-// Добавьте стили в существующий CSS
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalStyles;
-document.head.appendChild(styleSheet);
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
-
