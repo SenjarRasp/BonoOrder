@@ -1,28 +1,19 @@
+// Простой Service Worker для кэширования
 const CACHE_NAME = 'restaurant-orders-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json'
-];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-  );
+  console.log('Service Worker installing');
+  self.skipWaiting(); // Активируется сразу
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating');
 });
 
 self.addEventListener('fetch', (event) => {
+  // Простая стратегия: сеть сначала, потом кэш
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+    fetch(event.request)
+      .catch(() => caches.match(event.request))
   );
 });
