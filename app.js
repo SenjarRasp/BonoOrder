@@ -9,6 +9,7 @@ class RestaurantOrderApp {
         this.currentScreen = 'login';
         this.ordersHistory = [];
         this.availableTemplates = [];
+        this.isLoading = false; // Флаг загрузки
         
         this.init();
     }
@@ -21,31 +22,56 @@ class RestaurantOrderApp {
 
      // Показать анимацию загрузки
     showLoading(text = 'Загрузка...') {
+        if (this.isLoading) return; // Уже в процессе загрузки
+        
+        this.isLoading = true;
         const overlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
         
         if (overlay && loadingText) {
             loadingText.textContent = text;
             overlay.classList.add('active');
+            
+            // Блокируем все интерактивные элементы
+            this.disableInteractiveElements(true);
         }
     }
 
     // Скрыть анимацию загрузки
     hideLoading() {
+        this.isLoading = false;
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) {
             overlay.classList.remove('active');
+            
+            // Разблокируем все интерактивные элементы
+            this.disableInteractiveElements(false);
         }
     }
 
+    // Блокировка/разблокировка интерактивных элементов
+    disableInteractiveElements(disable) {
+        const interactiveElements = document.querySelectorAll('button, input, .action-card, .template-card, .back-btn');
+        
+        interactiveElements.forEach(element => {
+            if (disable) {
+                element.style.pointerEvents = 'none';
+                element.style.opacity = '0.6';
+                element.classList.add('disabled');
+            } else {
+                element.style.pointerEvents = '';
+                element.style.opacity = '';
+                element.classList.remove('disabled');
+            }
+        });
+    }
+    
     // Показать успешную анимацию
     showSuccess(message = 'Успешно!') {
         this.showLoading(message);
         const overlay = document.getElementById('loadingOverlay');
-        const loadingText = document.getElementById('loadingText');
         
-        if (overlay && loadingText) {
-            // Меняем анимацию на успех
+        if (overlay) {
             overlay.innerHTML = `
                 <div class="loading-text">${message}</div>
                 <div class="success-checkmark">
@@ -58,37 +84,35 @@ class RestaurantOrderApp {
                 </div>
             `;
             
-            // Автоматически скрываем через 2 секунды
             setTimeout(() => {
                 this.hideLoading();
             }, 2000);
         }
     }
-
-    // Анимация нажатия на карточку
+    // Анимация нажатия на карточку с блокировкой
     animateCardClick(cardElement, callback) {
-        // Добавляем класс нажатия
-        cardElement.classList.add('loading');
+        if (this.isLoading) return; // Игнорируем если уже идет загрузка
         
-        // Создаем элемент прогресс-бара
+        cardElement.classList.add('loading');
+        cardElement.style.transform = 'scale(0.95)';
+        
         const loadingBar = document.createElement('div');
         loadingBar.className = 'card-loading-bar';
         cardElement.appendChild(loadingBar);
         
-        // Анимация нажатия
-        cardElement.style.transform = 'scale(0.95)';
+        // Блокируем все карточки
+        this.disableInteractiveElements(true);
         
-        // Запускаем callback после короткой задержки для анимации
         setTimeout(() => {
             if (callback) {
                 callback();
             }
         }, 150);
         
-        // Убираем анимацию через 1 секунду (на случай долгой загрузки)
+        // Автоматический сброс через 10 секунд (на случай ошибки)
         setTimeout(() => {
             this.resetCardAnimation(cardElement);
-        }, 1000);
+        }, 10000);
     }
 
     // Сброс анимации карточки
@@ -99,27 +123,13 @@ class RestaurantOrderApp {
         if (loadingBar) {
             loadingBar.remove();
         }
-    }
-
-    // Показать успех на карточке
-    showCardSuccess(cardElement) {
-        cardElement.classList.add('success');
-        
-        const successCheck = document.createElement('div');
-        successCheck.className = 'success-check';
-        successCheck.innerHTML = '✓';
-        cardElement.appendChild(successCheck);
-        
-        setTimeout(() => {
-            cardElement.classList.remove('success');
-            if (successCheck.parentNode === cardElement) {
-                cardElement.removeChild(successCheck);
-            }
-        }, 2000);
+        this.disableInteractiveElements(false);
     }
     
-    // Обработка логина
+   // Обработка логина с улучшенной загрузкой
     async handleLogin(phone, password) {
+        if (this.isLoading) return;
+        
         try {
             this.showLoading('Вход в систему...');
             const loginResult = await this.apiCall('login', { phone, password });
@@ -143,8 +153,10 @@ class RestaurantOrderApp {
         }
     }
 
-    // Загрузка доступных шаблонов
+    // Загрузка доступных шаблонов с улучшенной загрузкой
     async loadUserTemplates() {
+        if (this.isLoading) return;
+        
         try {
             this.showLoading('Загрузка шаблонов...');
             const result = await this.apiCall('get_user_templates', {
@@ -160,8 +172,10 @@ class RestaurantOrderApp {
         }
     }
 
-    // Загрузка товаров по шаблону
+    // Загрузка товаров по шаблону с улучшенной загрузкой
     async loadTemplateProducts(templateName) {
+        if (this.isLoading) return;
+        
         try {
             this.showLoading('Загрузка товаров...');
             const result = await this.apiCall('get_products_by_template', {
@@ -180,8 +194,10 @@ class RestaurantOrderApp {
         }
     }
 
-    // Отправка заявки - ОБНОВЛЕННАЯ ВЕРСИЯ
+    // Отправка заявки с улучшенной загрузкой
     async submitOrder(templateName) {
+        if (this.isLoading) return;
+        
         if (!this.currentUser || !this.currentUser.phone) {
             this.showNotification('error', 'Ошибка: пользователь не авторизован');
             this.renderScreen('login');
@@ -227,8 +243,10 @@ class RestaurantOrderApp {
         }
     }
 
-    // API вызов
+    // API вызов с улучшенной обработкой ошибок
     async apiCall(action, data = {}) {
+        if (this.isLoading && action !== 'login') return;
+        
         console.log('📡 API Call:', action, data);
         
         try {
@@ -241,7 +259,6 @@ class RestaurantOrderApp {
             
             console.log('Fetching URL:', url.toString());
             
-            // УБИРАЕМ mode: 'no-cors' и добавляем обработку CORS
             const response = await fetch(url.toString());
             
             if (!response.ok) {
@@ -260,33 +277,12 @@ class RestaurantOrderApp {
         } catch (error) {
             console.error('❌ API Error:', error);
             
-            // Специальная обработка для CORS ошибок
             if (error.message.includes('Failed to fetch') || error.message.includes('CORS') || error.message.includes('status: 0')) {
                 console.log('CORS/Network error detected, trying JSONP approach...');
                 return this.apiCallJSONP(action, data);
             }
             
             throw new Error('Ошибка соединения: ' + error.message);
-        }
-    }
-
-    // Альтернативный метод для обхода CORS
-    async apiCallAlternative(action, data = {}) {
-        try {
-            // Используем proxy или другой метод
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const targetUrl = `${this.apiUrl}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`;
-            
-            const response = await fetch(proxyUrl + targetUrl);
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                return result.data;
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            throw new Error('Ошибка альтернативного соединения: ' + error.message);
         }
     }
     
@@ -316,22 +312,20 @@ class RestaurantOrderApp {
         return items;
     }
 
-    // Загрузка истории заявок
+    // Загрузка истории заявок с улучшенной загрузкой
     async loadOrderHistory() {
-        try {
-                 // Защита от слишком частых вызовов
-            if (this._loadingHistory) {
-                console.log('History already loading, skipping...');
-                return;
-            }
-            this._loadingHistory = true;
-            
-            console.log('=== LOAD ORDER HISTORY CLIENT ===');
-            console.log('Current user phone:', this.currentUser.phone);
-            
-            this.showLoading('Загрузка истории...');
+        if (this.isLoading) {
+            console.log('Already loading, skipping...');
+            return;
+        }
+        this._loadingHistory = true;
+        
+        console.log('=== LOAD ORDER HISTORY CLIENT ===');
+        console.log('Current user phone:', this.currentUser.phone);
+        
+        this.showLoading('Загрузка истории...');
 
-            // Добавляем задержку перед запросом
+        try {
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             const history = await this.apiCall('get_order_history', {
@@ -339,8 +333,6 @@ class RestaurantOrderApp {
             });
             
             console.log('Received history from API:', history);
-            console.log('History type:', typeof history);
-            console.log('Is array:', Array.isArray(history));
             
             if (Array.isArray(history)) {
                 this.ordersHistory = history;
@@ -357,7 +349,6 @@ class RestaurantOrderApp {
             console.error('Load history error:', error);
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
-            // Все равно показываем экран истории, но с пустым списком
             this.ordersHistory = [];
             this.renderScreen('order_history');
         } finally {
@@ -474,16 +465,14 @@ class RestaurantOrderApp {
         `;
     }
 
-    // Обработчик действий на главной странице
+    // Обработчик действий на главной странице с блокировкой
     handleMainAction(action) {
+        if (this.isLoading) return;
+        
         const card = event.currentTarget;
         
         // Анимация нажатия
-        card.style.transform = 'scale(0.98)';
-        
-        setTimeout(() => {
-            card.style.transform = '';
-            
+        this.animateCardClick(card, () => {
             switch(action) {
                 case 'new_order':
                     this.loadUserTemplates();
@@ -500,7 +489,7 @@ class RestaurantOrderApp {
                     }, 500);
                     break;
             }
-        }, 150);
+        });
     }
     
     // Рендер экрана выбора шаблона
@@ -544,22 +533,20 @@ class RestaurantOrderApp {
         `;
     }
 
-    // Обработчик выбора шаблона
+    // Обработчик выбора шаблона с блокировкой
     handleTemplateSelect(templateName, cardElement) {
-        // Анимация нажатия
-        cardElement.style.transform = 'scale(0.98)';
+        if (this.isLoading) return;
         
-        setTimeout(() => {
-            cardElement.style.transform = '';
+        this.animateCardClick(cardElement, () => {
             this.loadTemplateProducts(templateName);
-        }, 150);
+        });
     }
 
-    // Обработчик кнопки "Назад" с анимацией
+    // Обработчик кнопки "Назад" с блокировкой
     handleBackButton() {
-        const button = event.currentTarget;
+        if (this.isLoading) return;
         
-        // Анимация кнопки
+        const button = event.currentTarget;
         button.style.transform = 'translateX(-3px)';
         
         setTimeout(() => {
@@ -694,15 +681,50 @@ class RestaurantOrderApp {
         `;
     }
 
-    // Показать уведомление (без изменений)
+    // Показать уведомление
     showNotification(type, message) {
-        // ... существующий код без изменений
+        let statusElement;
+        
+        switch(this.currentScreen) {
+            case 'login':
+                statusElement = document.getElementById('loginStatus');
+                break;
+            case 'order_creation':
+                statusElement = document.getElementById('orderStatus');
+                break;
+            default:
+                // Создаем временное уведомление
+                const tempDiv = document.createElement('div');
+                tempDiv.className = `status ${type}`;
+                tempDiv.textContent = message;
+                tempDiv.style.position = 'fixed';
+                tempDiv.style.top = '20px';
+                tempDiv.style.left = '50%';
+                tempDiv.style.transform = 'translateX(-50%)';
+                tempDiv.style.zIndex = '1000';
+                tempDiv.style.maxWidth = '90%';
+                
+                document.body.appendChild(tempDiv);
+                
+                setTimeout(() => {
+                    document.body.removeChild(tempDiv);
+                }, 3000);
+                return;
+        }
+        
+        if (statusElement) {
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+        }
+        
+        console.log(`${type}: ${message}`);
     }
 
     // Настройка обработчиков событий
     setupEventListeners() {
         document.addEventListener('submit', (e) => {
-            if (e.target.id === 'loginForm') {
+            if (e.target.id === 'loginForm' && !this.isLoading) {
                 e.preventDefault();
                 const phone = document.getElementById('phone').value;
                 const password = document.getElementById('password').value;
@@ -722,6 +744,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
