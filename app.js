@@ -294,13 +294,13 @@ class RestaurantOrderApp {
                         ${this.currentUser.department} • ${this.currentUser.position}
                     </div>
                 </header>
-                // И добавьте кнопку для проверки в главный экран (временно)
+                /*// И добавьте кнопку для проверки в главный экран (временно)
                 // В renderMainScreen добавьте
                 <div class="action-card" onclick="app.checkUserState()">
                     <div class="action-icon">🔍</div>
                     <h3>Проверить состояние</h3>
                     <p>Отладочная информация</p>
-                </div>
+                </div> */
                 
                 <div class="actions-grid">
                     <div class="action-card" onclick="app.renderScreen('template_selection')">
@@ -532,6 +532,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
