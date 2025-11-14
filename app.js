@@ -587,23 +587,22 @@ class RestaurantOrderApp {
     // Рендер экрана истории заявок (остается без изменений)
     renderOrderHistoryScreen() {
         console.log('Rendering history screen, orders count:', this.ordersHistory.length);
+        
         let ordersHtml = '';
         
-        if (this.ordersHistory.length === 0) {
+        if (!this.ordersHistory || this.ordersHistory.length === 0) {
             ordersHtml = `
                 <div style="text-align: center; padding: 40px; color: #7f8c8d;">
                     <div style="font-size: 3rem; margin-bottom: 20px;">📭</div>
                     <h3>Заявок пока нет</h3>
                     <p>Создайте первую заявку на главном экране</p>
-                    <p style="font-size: 12px; margin-top: 10px;">
-                    Или история временно недоступна
-                    </p>
                 </div>
             `;
         } else {
-            this.ordersHistory.forEach(order => {
-                console.log(`Rendering order ${index}:`, order);
-            
+            // ИСПРАВЛЕНИЕ: убрали неиспользуемый параметр index
+            this.ordersHistory.forEach((order) => {
+                console.log('Rendering order:', order);
+                
                 // Безопасное форматирование даты
                 let orderDate = 'Дата неизвестна';
                 try {
@@ -613,19 +612,19 @@ class RestaurantOrderApp {
                 }
                 
                 ordersHtml += `
-                    <div class="order-item ${order.status}">
+                    <div class="order-item ${order.status || 'sent'}">
                         <div class="order-header">
                             <span class="order-id">${order.order_id || 'Без номера'}</span>
                             <span class="order-date">${orderDate}</span>
                         </div>
-                    <div class="order-details">
-                        <span>${order.template || 'Без шаблона'}</span>
-                        <span>${order.items_count || 0} товаров</span>
+                        <div class="order-details">
+                            <span>${order.template || 'Без шаблона'}</span>
+                            <span>${order.items_count || 0} товаров</span>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
+                            ✅ Успешно отправлена
+                        </div>
                     </div>
-                    <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
-                        ✅ Успешно отправлена
-                    </div>
-                </div>
                 `;
             });
         }
@@ -637,7 +636,9 @@ class RestaurantOrderApp {
                     <h1>История заявок</h1>
                 </header>
                 
-                ${ordersHtml}
+                <div class="orders-list">
+                    ${ordersHtml}
+                </div>
             </div>
         `;
     }
@@ -670,6 +671,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
