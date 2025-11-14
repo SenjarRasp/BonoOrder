@@ -281,18 +281,27 @@ class RestaurantOrderApp {
     // Загрузка истории заявок
     async loadOrderHistory() {
         try {
+            console.log('=== LOAD ORDER HISTORY CLIENT ===');
+            console.log('Current user phone:', this.currentUser.phone);
+            
             this.showLoading('Загрузка истории...');
-            this.ordersHistory = await this.apiCall('get_order_history', {
+            const history = await this.apiCall('get_order_history', {
                 userPhone: this.currentUser.phone
             });
+            
+            console.log('Received history:', history);
+            
+            this.ordersHistory = history;
             this.hideLoading();
             this.renderScreen('order_history');
+            
         } catch (error) {
+            console.error('Load history error:', error);
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
             this.renderScreen('order_history');
         }
-    }
+    }    
 
     // Рендер экранов
     renderScreen(screenName, data = null) {
@@ -628,4 +637,5 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
