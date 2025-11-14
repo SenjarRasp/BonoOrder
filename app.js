@@ -232,13 +232,19 @@ class RestaurantOrderApp {
         console.log('📡 API Call:', action, data);
         
         try {
+             // Добавляем небольшую задержку между запросами
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             const url = new URL(this.apiUrl);
             url.searchParams.set('action', action);
             url.searchParams.set('data', JSON.stringify(data));
             
             console.log('Fetching URL:', url.toString());
             
-            const response = await fetch(url.toString());
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                mode: 'no-cors' // Убираем CORS проверку для Google Apps Script
+            });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -255,10 +261,37 @@ class RestaurantOrderApp {
             
         } catch (error) {
             console.error('❌ API Error:', error);
+        
+            // Если ошибка CORS, пробуем получить данные другим способом
+            if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+                console.log('CORS error detected, trying alternative approach...');
+                return this.apiCallAlternative(action, data);
+            }
+            
             throw new Error('Ошибка соединения: ' + error.message);
         }
     }
 
+    // Альтернативный метод для обхода CORS
+    async apiCallAlternative(action, data = {}) {
+        try {
+            // Используем proxy или другой метод
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const targetUrl = `${this.apiUrl}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`;
+            
+            const response = await fetch(proxyUrl + targetUrl);
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                return result.data;
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            throw new Error('Ошибка альтернативного соединения: ' + error.message);
+        }
+    }
+    
     // Сбор данных из формы заявки
     collectOrderItems() {
         const items = [];
@@ -288,10 +321,20 @@ class RestaurantOrderApp {
     // Загрузка истории заявок
     async loadOrderHistory() {
         try {
+                 // Защита от слишком частых вызовов
+            if (this._loadingHistory) {
+                console.log('History already loading, skipping...');
+                return;
+            }
+            this._loadingHistory = true;
+            
             console.log('=== LOAD ORDER HISTORY CLIENT ===');
             console.log('Current user phone:', this.currentUser.phone);
             
             this.showLoading('Загрузка истории...');
+
+            // Добавляем задержку перед запросом
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
             const history = await this.apiCall('get_order_history', {
                 userPhone: this.currentUser.phone
@@ -319,6 +362,8 @@ class RestaurantOrderApp {
             // Все равно показываем экран истории, но с пустым списком
             this.ordersHistory = [];
             this.renderScreen('order_history');
+        } finally {
+            this._loadingHistory = false;
         }
     }    
 
@@ -671,6 +716,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
