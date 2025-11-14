@@ -1,5 +1,5 @@
 // sw.js - Service Worker для Restaurant Orders
-const CACHE_NAME = 'restaurant-orders-v2';
+const CACHE_NAME = 'restaurant-orders-v3';
 const urlsToCache = [
   '/BonoOrder/',
   '/BonoOrder/index.html',
@@ -10,6 +10,8 @@ const urlsToCache = [
 
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing');
+  self.skipWaiting(); // Принудительная активация
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -21,18 +23,21 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating');
+  console.log('Service Worker: Activating new version');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('Service Worker: Clearing old cache');
+            console.log('Service Worker: Deleting old cache', cache);
             return caches.delete(cache);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      // Немедленно завладеваем всеми клиентами
+      return self.clients.claim();
+    })
   );
 });
 
@@ -66,3 +71,4 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
