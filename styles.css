@@ -17,7 +17,7 @@ body {
     flex-direction: column;
 }
 
-/* Ћбщие стили */
+/* ЕЅГЎГ№ГЁГҐ Г±ГІГЁГ«ГЁ */
 .btn {
     padding: 12px 24px;
     border: none;
@@ -90,7 +90,7 @@ input:focus, textarea:focus, select:focus {
     display: block;
 }
 
-/* ќкран логина */
+/* ВќГЄГ°Г Г­ Г«Г®ГЈГЁГ­Г  */
 .login-screen {
     flex: 1;
     display: flex;
@@ -120,7 +120,7 @@ input:focus, textarea:focus, select:focus {
     max-width: 400px;
 }
 
-/* ѓлавный экран */
+/* Ж’Г«Г ГўГ­Г»Г© ГЅГЄГ°Г Г­ */
 .main-screen {
     flex: 1;
     background: white;
@@ -171,7 +171,27 @@ input:focus, textarea:focus, select:focus {
     font-size: 2.5rem;
     margin-bottom: 10px;
 }
+.order-copy-hint {
+    font-size: 12px;
+    color: #7f8c8d;
+    text-align: center;
+    margin-top: 10px;
+    font-style: italic;
+}
 
+.supplier-section {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.supplier-name {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
 .action-card h3 {
     color: #2c3e50;
     margin-bottom: 8px;
@@ -182,7 +202,7 @@ input:focus, textarea:focus, select:focus {
     font-size: 14px;
 }
 
-/* ќкран выбора шаблона */
+/* ВќГЄГ°Г Г­ ГўГ»ГЎГ®Г°Г  ГёГ ГЎГ«Г®Г­Г  */
 .template-screen {
     flex: 1;
     background: white;
@@ -227,7 +247,7 @@ input:focus, textarea:focus, select:focus {
     line-height: 1.4;
 }
 
-/* ќкран созданиЯ заЯвки */
+/* ВќГЄГ°Г Г­ Г±Г®Г§Г¤Г Г­ГЁГџ Г§Г ГџГўГЄГЁ */
 .order-screen {
     flex: 1;
     background: white;
@@ -285,7 +305,7 @@ input:focus, textarea:focus, select:focus {
     margin-left: 10px;
 }
 
-/* €сториЯ заЯвок */
+/* Л†Г±ГІГ®Г°ГЁГџ Г§Г ГџГўГ®ГЄ */
 .history-screen {
     flex: 1;
     background: white;
@@ -331,7 +351,7 @@ input:focus, textarea:focus, select:focus {
     font-size: 14px;
 }
 
-/* “ведомлениЯ */
+/* вЂњГўГҐГ¤Г®Г¬Г«ГҐГ­ГЁГџ */
 .notifications {
     background: #fff3cd;
     border: 1px solid #ffeaa7;
@@ -345,7 +365,7 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 10px;
 }
 
-/* Ђдаптивность */
+/* в‚¬Г¤Г ГЇГІГЁГўГ­Г®Г±ГІГј */
 @media (min-width: 768px) {
     .actions-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -361,7 +381,7 @@ input:focus, textarea:focus, select:focus {
     }
 }
 
-/* ‡агрузка */
+/* вЂЎГ ГЈГ°ГіГ§ГЄГ  */
 .loading {
     display: inline-block;
     width: 20px;
@@ -375,4 +395,5 @@ input:focus, textarea:focus, select:focus {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+
 }
