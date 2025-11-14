@@ -76,10 +76,6 @@ class RestaurantOrderApp {
         try {
             this.showNotification('loading', 'Вход в систему...');
             const loginResult = await this.apiCall('login', { email, password });
-           
-            console.log('=== AFTER LOGIN ===');
-            console.log('Current user object:', this.currentUser);
-            console.log('User email:', this.currentUser.email);
             
             // Сохраняем всю информацию о пользователе
             this.currentUser = {
@@ -88,7 +84,10 @@ class RestaurantOrderApp {
                 position: loginResult.user.position,
                 token: loginResult.token
             };
-            
+
+            console.log('=== AFTER LOGIN ===');
+            console.log('Current user object:', this.currentUser);
+            console.log('User email:', this.currentUser.email);
             console.log('✅ User logged in:', this.currentUser);
             
             this.renderScreen('main');
@@ -505,6 +504,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
