@@ -9,6 +9,9 @@ class RestaurantOrderApp {
         this.currentUser = null;
         this.currentScreen = 'login';
         this.ordersHistory = [];
+
+        // Принудительное обновление Service Worker
+        this.forceUpdate();
         
         this.init();
     }
@@ -32,6 +35,31 @@ class RestaurantOrderApp {
             this.showNotification('error', 'Email пользователя не найден');
         } else {
             this.showNotification('success', `Пользователь: ${this.currentUser.email}`);
+        }
+    }
+
+    async forceUpdate() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                
+                // Проверяем обновления каждые 30 секунд
+                setInterval(async () => {
+                    await registration.update();
+                }, 30000);
+                
+                // Слушаем сообщения от Service Worker
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'NEW_VERSION') {
+                        if (confirm('Доступна новая версия приложения. Обновить сейчас?')) {
+                            window.location.reload();
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.log('Service Worker update error:', error);
+            }
         }
     }
     
@@ -504,6 +532,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
