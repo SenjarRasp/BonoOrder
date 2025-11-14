@@ -163,11 +163,13 @@ class RestaurantOrderApp {
             if (quantity > 0) {
                 const productName = input.dataset.productName;
                 const supplier = input.dataset.supplier;
+                const unit = input.dataset.productUnit; // Добавляем единицу измерения
                 const commentInput = document.querySelector(`.comment-input[data-product-name="${productName}"]`);
                 
                 items.push({
                     product_name: productName,
                     quantity: quantity,
+                    unit: unit, // Добавляем единицу измерения
                     supplier: supplier,
                     comment: commentInput ? commentInput.value : ''
                 });
@@ -357,6 +359,7 @@ class RestaurantOrderApp {
                                min="0" 
                                value="0" 
                                data-product-name="${product.name}"
+                               data-product-unit="${product.unit}"
                                data-supplier="${supplier}"
                                placeholder="0">
                         <input type="text" 
@@ -460,3 +463,4 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
