@@ -896,3 +896,35 @@ input:focus, textarea:focus, select:focus {
 .back-btn:hover::before {
     left: 100%;
 }
+
+/* Анимация выхода для экранов */
+.screen-exit {
+    animation: screenSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes screenSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+}
+
+/* Для обратного перехода (назад) */
+.screen-exit-back {
+    animation: screenSlideOutBack 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes screenSlideOutBack {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+}
