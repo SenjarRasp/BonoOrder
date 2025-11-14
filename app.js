@@ -218,7 +218,6 @@ class RestaurantOrderApp {
         }
     }
 
-    // Рендер экрана логина
     renderLoginScreen() {
         return `
             <div class="login-screen">
@@ -228,19 +227,13 @@ class RestaurantOrderApp {
                 
                 <form id="loginForm" class="form">
                     <div class="input-group">
-                        <input type="tel" id="phone" placeholder="Телефон" required value="0705072507">
+                        <input type="tel" id="phone" placeholder="Телефон" required>
                     </div>
                     <div class="input-group">
-                        <input type="password" id="password" placeholder="Пароль" required value="123456">
+                        <input type="password" id="password" placeholder="Пароль" required>
                     </div>
                     <button type="submit" class="btn primary" style="width: 100%;">Войти</button>
                 </form>
-                
-                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
-                    <strong>Тестовый доступ:</strong><br>
-                    Телефон: 0705072507<br>
-                    Пароль: 123456
-                </div>
                 
                 <div id="loginStatus" class="status"></div>
             </div>
@@ -464,5 +457,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
