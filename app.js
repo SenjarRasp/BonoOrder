@@ -370,30 +370,39 @@ class RestaurantOrderApp {
         this.currentScreen = screenName;
         const app = document.getElementById('app');
         
+        // Определяем направление анимации
+        const isBackNavigation = screenName === 'main' || screenName === 'template_selection';
+        const exitAnimation = isBackNavigation ? 'screen-exit-back' : 'screen-exit';
+        
         // Добавляем класс анимации выхода
         if (app.children.length > 0) {
-            app.children[0].classList.add('screen-exit');
+            const currentScreen = app.children[0];
+            currentScreen.classList.add(exitAnimation);
         }
         
         setTimeout(() => {
+            let screenHTML = '';
             switch(screenName) {
                 case 'login':
-                    app.innerHTML = this.renderLoginScreen();
+                    screenHTML = this.renderLoginScreen();
                     break;
                 case 'main':
-                    app.innerHTML = this.renderMainScreen();
+                    screenHTML = this.renderMainScreen();
                     break;
                 case 'template_selection':
-                    app.innerHTML = this.renderTemplateSelectionScreen();
+                    screenHTML = this.renderTemplateSelectionScreen();
                     break;
                 case 'order_creation':
-                    app.innerHTML = this.renderOrderCreationScreen(data);
+                    screenHTML = this.renderOrderCreationScreen(data);
                     break;
                 case 'order_history':
-                    app.innerHTML = this.renderOrderHistoryScreen();
+                    screenHTML = this.renderOrderHistoryScreen();
                     break;
             }
-        }, 200);
+            
+            app.innerHTML = screenHTML;
+            
+        }, 300);
     }
 
     renderLoginScreen() {
@@ -469,28 +478,29 @@ class RestaurantOrderApp {
     handleMainAction(action) {
         const card = event.currentTarget;
         
-        switch(action) {
-            case 'new_order':
-                this.animateCardClick(card, () => {
+        // Анимация нажатия
+        card.style.transform = 'scale(0.98)';
+        
+        setTimeout(() => {
+            card.style.transform = '';
+            
+            switch(action) {
+                case 'new_order':
                     this.loadUserTemplates();
-                });
-                break;
-                
-            case 'history':
-                this.animateCardClick(card, () => {
+                    break;
+                    
+                case 'history':
                     this.loadOrderHistory();
-                });
-                break;
-                
-            case 'logout':
-                this.animateCardClick(card, () => {
+                    break;
+                    
+                case 'logout':
                     this.showLoading('Выход из системы...');
                     setTimeout(() => {
                         this.logout();
                     }, 500);
-                });
-                break;
-        }
+                    break;
+            }
+        }, 150);
     }
     
     // Рендер экрана выбора шаблона
@@ -536,23 +546,21 @@ class RestaurantOrderApp {
 
     // Обработчик выбора шаблона
     handleTemplateSelect(templateName, cardElement) {
-        this.animateCardClick(cardElement, () => {
+        // Анимация нажатия
+        cardElement.style.transform = 'scale(0.98)';
+        
+        setTimeout(() => {
+            cardElement.style.transform = '';
             this.loadTemplateProducts(templateName);
-        });
+        }, 150);
     }
 
     // Обработчик кнопки "Назад" с анимацией
     handleBackButton() {
         const button = event.currentTarget;
-        const currentScreen = document.querySelector('.main-screen, .template-screen, .order-screen, .history-screen');
         
         // Анимация кнопки
-        button.style.transform = 'translateX(-5px)';
-        
-        // Анимация выхода экрана
-        if (currentScreen) {
-            currentScreen.classList.add('screen-exit-back');
-        }
+        button.style.transform = 'translateX(-3px)';
         
         setTimeout(() => {
             button.style.transform = '';
@@ -714,6 +722,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
