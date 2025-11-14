@@ -12,7 +12,7 @@ class RestaurantOrderApp {
         
         this.init();
     }
-    
+
     init() {
         this.renderScreen('login');
         this.setupEventListeners();
@@ -47,6 +47,7 @@ class RestaurantOrderApp {
         if (overlay && loadingText) {
             // Меняем анимацию на успех
             overlay.innerHTML = `
+                <div class="loading-text">${message}</div>
                 <div class="success-checkmark">
                     <div class="check-icon">
                         <span class="icon-line line-tip"></span>
@@ -55,7 +56,6 @@ class RestaurantOrderApp {
                         <div class="icon-fix"></div>
                     </div>
                 </div>
-                <div class="loading-text">${message}</div>
             `;
             
             // Автоматически скрываем через 2 секунды
@@ -63,6 +63,59 @@ class RestaurantOrderApp {
                 this.hideLoading();
             }, 2000);
         }
+    }
+
+    // Анимация нажатия на карточку
+    animateCardClick(cardElement, callback) {
+        // Добавляем класс нажатия
+        cardElement.classList.add('loading');
+        
+        // Создаем элемент прогресс-бара
+        const loadingBar = document.createElement('div');
+        loadingBar.className = 'card-loading-bar';
+        cardElement.appendChild(loadingBar);
+        
+        // Анимация нажатия
+        cardElement.style.transform = 'scale(0.95)';
+        
+        // Запускаем callback после короткой задержки для анимации
+        setTimeout(() => {
+            if (callback) {
+                callback();
+            }
+        }, 150);
+        
+        // Убираем анимацию через 1 секунду (на случай долгой загрузки)
+        setTimeout(() => {
+            this.resetCardAnimation(cardElement);
+        }, 1000);
+    }
+
+    // Сброс анимации карточки
+    resetCardAnimation(cardElement) {
+        cardElement.classList.remove('loading');
+        cardElement.style.transform = '';
+        const loadingBar = cardElement.querySelector('.card-loading-bar');
+        if (loadingBar) {
+            loadingBar.remove();
+        }
+    }
+
+    // Показать успех на карточке
+    showCardSuccess(cardElement) {
+        cardElement.classList.add('success');
+        
+        const successCheck = document.createElement('div');
+        successCheck.className = 'success-check';
+        successCheck.innerHTML = '✓';
+        cardElement.appendChild(successCheck);
+        
+        setTimeout(() => {
+            cardElement.classList.remove('success');
+            if (successCheck.parentNode === cardElement) {
+                cardElement.removeChild(successCheck);
+            }
+        }, 2000);
     }
     
     // Обработка логина
@@ -246,23 +299,30 @@ class RestaurantOrderApp {
         this.currentScreen = screenName;
         const app = document.getElementById('app');
         
-        switch(screenName) {
-            case 'login':
-                app.innerHTML = this.renderLoginScreen();
-                break;
-            case 'main':
-                app.innerHTML = this.renderMainScreen();
-                break;
-            case 'template_selection':
-                app.innerHTML = this.renderTemplateSelectionScreen();
-                break;
-            case 'order_creation':
-                app.innerHTML = this.renderOrderCreationScreen(data);
-                break;
-            case 'order_history':
-                app.innerHTML = this.renderOrderHistoryScreen();
-                break;
+        // Добавляем класс анимации выхода
+        if (app.children.length > 0) {
+            app.children[0].classList.add('screen-exit');
         }
+        
+        setTimeout(() => {
+            switch(screenName) {
+                case 'login':
+                    app.innerHTML = this.renderLoginScreen();
+                    break;
+                case 'main':
+                    app.innerHTML = this.renderMainScreen();
+                    break;
+                case 'template_selection':
+                    app.innerHTML = this.renderTemplateSelectionScreen();
+                    break;
+                case 'order_creation':
+                    app.innerHTML = this.renderOrderCreationScreen(data);
+                    break;
+                case 'order_history':
+                    app.innerHTML = this.renderOrderHistoryScreen();
+                    break;
+            }
+        }, 200);
     }
 
     renderLoginScreen() {
@@ -292,7 +352,7 @@ class RestaurantOrderApp {
     // Рендер главного экрана
     renderMainScreen() {
         return `
-            <div class="main-screen">
+            <div class="main-screen screen-transition">
                 <header class="header">
                     <h1>Главная</h1>
                     <div class="user-info">
@@ -301,22 +361,28 @@ class RestaurantOrderApp {
                 </header>
                 
                 <div class="actions-grid">
-                    <div class="action-card" onclick="app.loadUserTemplates()">
-                        <div class="action-icon">📋</div>
-                        <h3>Новая заявка</h3>
-                        <p>Создать заказ поставщикам</p>
+                    <div class="action-card" onclick="app.handleMainAction('new_order')">
+                        <div class="action-content">
+                            <div class="action-icon">📋</div>
+                            <h3>Новая заявка</h3>
+                            <p>Создать заказ поставщикам</p>
+                        </div>
                     </div>
                     
-                    <div class="action-card" onclick="app.loadOrderHistory()">
-                        <div class="action-icon">📊</div>
-                        <h3>История заявок</h3>
-                        <p>Посмотреть отправленные</p>
+                    <div class="action-card" onclick="app.handleMainAction('history')">
+                        <div class="action-content">
+                            <div class="action-icon">📊</div>
+                            <h3>История заявок</h3>
+                            <p>Посмотреть отправленные</p>
+                        </div>
                     </div>
                     
-                    <div class="action-card" onclick="app.logout()">
-                        <div class="action-icon">🚪</div>
-                        <h3>Выйти</h3>
-                        <p>Завершить сеанс</p>
+                    <div class="action-card" onclick="app.handleMainAction('logout')">
+                        <div class="action-content">
+                            <div class="action-icon">🚪</div>
+                            <h3>Выйти</h3>
+                            <p>Завершить сеанс</p>
+                        </div>
                     </div>
                 </div>
                 
@@ -328,6 +394,34 @@ class RestaurantOrderApp {
         `;
     }
 
+    // Обработчик действий на главной странице
+    handleMainAction(action) {
+        const card = event.currentTarget;
+        
+        switch(action) {
+            case 'new_order':
+                this.animateCardClick(card, () => {
+                    this.loadUserTemplates();
+                });
+                break;
+                
+            case 'history':
+                this.animateCardClick(card, () => {
+                    this.loadOrderHistory();
+                });
+                break;
+                
+            case 'logout':
+                this.animateCardClick(card, () => {
+                    this.showLoading('Выход из системы...');
+                    setTimeout(() => {
+                        this.logout();
+                    }, 500);
+                });
+                break;
+        }
+    }
+    
     // Рендер экрана выбора шаблона
     renderTemplateSelectionScreen() {
         let templatesHtml = '';
@@ -343,12 +437,14 @@ class RestaurantOrderApp {
         } else {
             templatesHtml = '<div class="templates-grid">';
             
-            this.availableTemplates.forEach(template => {
+            this.availableTemplates.forEach((template, index) => {
                 templatesHtml += `
-                    <div class="template-card" onclick="app.loadTemplateProducts('${template.name}')">
-                        <div class="template-icon">${template.type === 'daily' ? '📅' : '📦'}</div>
-                        <h3>${template.name}</h3>
-                        <p>${template.type === 'daily' ? 'Ежедневная закупка' : 'Еженедельная закупка'}</p>
+                    <div class="template-card" onclick="app.handleTemplateSelect('${template.name}', this)">
+                        <div class="template-content">
+                            <div class="template-icon">${template.type === 'daily' ? '📅' : '📦'}</div>
+                            <h3>${template.name}</h3>
+                            <p>${template.type === 'daily' ? 'Ежедневная закупка' : 'Еженедельная закупка'}</p>
+                        </div>
                     </div>
                 `;
             });
@@ -357,9 +453,9 @@ class RestaurantOrderApp {
         }
         
         return `
-            <div class="template-screen">
+            <div class="template-screen screen-transition">
                 <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">← Назад</button>
+                    <button class="back-btn" onclick="app.handleBackButton()">← Назад</button>
                     <h1>Выбор шаблона</h1>
                 </header>
                 ${templatesHtml}
@@ -367,6 +463,24 @@ class RestaurantOrderApp {
         `;
     }
 
+    // Обработчик выбора шаблона
+    handleTemplateSelect(templateName, cardElement) {
+        this.animateCardClick(cardElement, () => {
+            this.loadTemplateProducts(templateName);
+        });
+    }
+
+    // Обработчик кнопки "Назад" с анимацией
+    handleBackButton() {
+        const button = event.currentTarget;
+        button.style.transform = 'translateX(-5px)';
+        
+        setTimeout(() => {
+            button.style.transform = '';
+            this.renderScreen('main');
+        }, 150);
+    }
+    
     // Рендер экрана создания заявки
     renderOrderCreationScreen(data) {
         if (!data || !data.products) {
@@ -417,7 +531,7 @@ class RestaurantOrderApp {
         });
         
         return `
-            <div class="order-screen">
+            <div class="order-screen screen-transition">
                 <header class="header">
                     <button class="back-btn" onclick="app.renderScreen('template_selection')">← Назад</button>
                     <h1>${data.templateName}</h1>
@@ -467,7 +581,7 @@ class RestaurantOrderApp {
         }
         
         return `
-            <div class="history-screen">
+            <div class="history-screen screen-transition">
                 <header class="header">
                     <button class="back-btn" onclick="app.renderScreen('main')">← Назад</button>
                     <h1>История заявок</h1>
@@ -506,10 +620,3 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
-
-
-
-
-
-
-
