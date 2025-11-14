@@ -85,7 +85,7 @@ class RestaurantOrderApp {
                 token: loginResult.token
             };
 
-            console.log('=== AFTER LOGIN ===');
+            console.log('=== AFTER LOGIN!!! ===');
             console.log('Current user object:', this.currentUser);
             console.log('User email:', this.currentUser.email);
             console.log('✅ User logged in:', this.currentUser);
@@ -504,6 +504,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
