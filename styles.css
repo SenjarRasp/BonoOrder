@@ -31,12 +31,12 @@ body {
 }
 
 .btn.primary {
-    background: #e74c3c;
+    background: #000000;
     color: white;
 }
 
 .btn.primary:hover {
-    background: #c0392b;
+    background: #2d2e2d;
     transform: translateY(-2px);
 }
 
@@ -403,4 +403,5 @@ input:focus, textarea:focus, select:focus {
     100% { transform: rotate(360deg); }
 
 }
+
 
