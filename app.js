@@ -232,8 +232,8 @@ class RestaurantOrderApp {
         console.log('📡 API Call:', action, data);
         
         try {
-             // Добавляем небольшую задержку между запросами
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Добавляем небольшую задержку между запросами
+            await new Promise(resolve => setTimeout(resolve, 500));
             
             const url = new URL(this.apiUrl);
             url.searchParams.set('action', action);
@@ -241,10 +241,8 @@ class RestaurantOrderApp {
             
             console.log('Fetching URL:', url.toString());
             
-            const response = await fetch(url.toString(), {
-                method: 'GET',
-                mode: 'no-cors' // Убираем CORS проверку для Google Apps Script
-            });
+            // УБИРАЕМ mode: 'no-cors' и добавляем обработку CORS
+            const response = await fetch(url.toString());
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -261,11 +259,11 @@ class RestaurantOrderApp {
             
         } catch (error) {
             console.error('❌ API Error:', error);
-        
-            // Если ошибка CORS, пробуем получить данные другим способом
-            if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
-                console.log('CORS error detected, trying alternative approach...');
-                return this.apiCallAlternative(action, data);
+            
+            // Специальная обработка для CORS ошибок
+            if (error.message.includes('Failed to fetch') || error.message.includes('CORS') || error.message.includes('status: 0')) {
+                console.log('CORS/Network error detected, trying JSONP approach...');
+                return this.apiCallJSONP(action, data);
             }
             
             throw new Error('Ошибка соединения: ' + error.message);
@@ -716,6 +714,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
