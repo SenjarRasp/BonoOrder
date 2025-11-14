@@ -473,12 +473,20 @@ class RestaurantOrderApp {
     // Обработчик кнопки "Назад" с анимацией
     handleBackButton() {
         const button = event.currentTarget;
+        const currentScreen = document.querySelector('.main-screen, .template-screen, .order-screen, .history-screen');
+        
+        // Анимация кнопки
         button.style.transform = 'translateX(-5px)';
+        
+        // Анимация выхода экрана
+        if (currentScreen) {
+            currentScreen.classList.add('screen-exit-back');
+        }
         
         setTimeout(() => {
             button.style.transform = '';
             this.renderScreen('main');
-        }, 150);
+        }, 300);
     }
     
     // Рендер экрана создания заявки
@@ -620,3 +628,4 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
