@@ -56,24 +56,28 @@ class RestaurantOrderApp {
         }
     }
 
-    // Обработка логина
+    // Обработка логина - исправленная версия
     async handleLogin(email, password) {
         try {
             this.showNotification('loading', 'Вход в систему...');
+            const loginResult = await this.apiCall('login', { email, password });
             
-            if (!email || !password) {
-                throw new Error('Введите email и пароль');
-            }
+            // Сохраняем всю информацию о пользователе
+            this.currentUser = {
+                email: loginResult.user.email,
+                department: loginResult.user.department,
+                position: loginResult.user.position,
+                token: loginResult.token
+            };
             
-            this.currentUser = await this.apiCall('login', { email, password });
+            console.log('✅ User logged in:', this.currentUser);
+            
             this.renderScreen('main');
             this.showNotification('success', `Добро пожаловать, ${this.currentUser.position}!`);
-            
         } catch (error) {
             this.showNotification('error', error.message);
         }
     }
-
     // Загрузка товаров
     async loadTemplateProducts(templateId) {
         try {
@@ -465,5 +469,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
