@@ -19,6 +19,22 @@ class RestaurantOrderApp {
         this.testConnection();
     }
 
+    // Добавьте этот метод в класс RestaurantOrderApp
+    checkUserState() {
+        console.log('=== USER STATE CHECK ===');
+        console.log('Current user:', this.currentUser);
+        console.log('User email:', this.currentUser ? this.currentUser.email : 'NO USER');
+        console.log('Screen:', this.currentScreen);
+        
+        if (!this.currentUser) {
+            this.showNotification('error', 'Пользователь не авторизован');
+        } else if (!this.currentUser.email) {
+            this.showNotification('error', 'Email пользователя не найден');
+        } else {
+            this.showNotification('success', `Пользователь: ${this.currentUser.email}`);
+        }
+    }
+    
     // Тест подключения
     async testConnection() {
         try {
@@ -55,12 +71,15 @@ class RestaurantOrderApp {
             throw new Error('Ошибка соединения: ' + error.message);
         }
     }
-
     // Обработка логина - исправленная версия
     async handleLogin(email, password) {
         try {
             this.showNotification('loading', 'Вход в систему...');
             const loginResult = await this.apiCall('login', { email, password });
+           
+            console.log('=== AFTER LOGIN ===');
+            console.log('Current user object:', this.currentUser);
+            console.log('User email:', this.currentUser.email);
             
             // Сохраняем всю информацию о пользователе
             this.currentUser = {
@@ -78,6 +97,7 @@ class RestaurantOrderApp {
             this.showNotification('error', error.message);
         }
     }
+    
     // Загрузка товаров
     async loadTemplateProducts(templateId) {
         try {
@@ -96,8 +116,13 @@ class RestaurantOrderApp {
 
     // Отправка заявки
     async submitOrder(templateName) {
+        console.log('=== SUBMIT ORDER DEBUG ===');
+        console.log('Current user:', this.currentUser);
+        console.log('Current user email:', this.currentUser ? this.currentUser.email : 'UNDEFINED!');
+        
         try {
             const items = this.collectOrderItems();
+            console.log('Items to send:', items);
             
             if (items.length === 0) {
                 this.showNotification('error', 'Добавьте хотя бы один товар в заявку');
@@ -106,11 +131,15 @@ class RestaurantOrderApp {
             
             this.showNotification('loading', 'Отправка заявки поставщикам...');
             
-            const result = await this.apiCall('create_order', {
+            const requestData = {
                 userEmail: this.currentUser.email,
                 templateName: templateName,
                 items: items
-            });
+            };
+            
+            console.log('API request data:', requestData);
+            
+            const result = await this.apiCall('create_order', requestData);
             
             // Сохраняем в историю
             this.ordersHistory.unshift({
@@ -238,6 +267,13 @@ class RestaurantOrderApp {
                         ${this.currentUser.department} • ${this.currentUser.position}
                     </div>
                 </header>
+                // И добавьте кнопку для проверки в главный экран (временно)
+                // В renderMainScreen добавьте
+                <div class="action-card" onclick="app.checkUserState()">
+                    <div class="action-icon">🔍</div>
+                    <h3>Проверить состояние</h3>
+                    <p>Отладочная информация</p>
+                </div>
                 
                 <div class="actions-grid">
                     <div class="action-card" onclick="app.renderScreen('template_selection')">
@@ -469,6 +505,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
