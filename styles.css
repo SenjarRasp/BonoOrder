@@ -105,8 +105,14 @@ input:focus, textarea:focus, select:focus {
 }
 
 .logo {
-    font-size: 4rem;
     margin-bottom: 20px;
+    text-align: center;
+}
+
+.logo img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
 }
 
 .login-screen h1 {
@@ -397,3 +403,4 @@ input:focus, textarea:focus, select:focus {
     100% { transform: rotate(360deg); }
 
 }
+
