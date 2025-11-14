@@ -236,14 +236,21 @@ class RestaurantOrderApp {
             url.searchParams.set('action', action);
             url.searchParams.set('data', JSON.stringify(data));
             
+            console.log('Fetching URL:', url.toString());
+            
             const response = await fetch(url.toString());
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const result = await response.json();
             console.log('✅ API Response:', result);
             
             if (result.status === 'success') {
                 return result.data;
             } else {
-                throw new Error(result.message);
+                throw new Error(result.message || 'Unknown API error');
             }
             
         } catch (error) {
@@ -285,13 +292,23 @@ class RestaurantOrderApp {
             console.log('Current user phone:', this.currentUser.phone);
             
             this.showLoading('Загрузка истории...');
+            
             const history = await this.apiCall('get_order_history', {
                 userPhone: this.currentUser.phone
             });
             
-            console.log('Received history:', history);
+            console.log('Received history from API:', history);
+            console.log('History type:', typeof history);
+            console.log('Is array:', Array.isArray(history));
             
-            this.ordersHistory = history;
+            if (Array.isArray(history)) {
+                this.ordersHistory = history;
+                console.log('Processed history:', this.ordersHistory);
+            } else {
+                console.log('History is not array, setting empty array');
+                this.ordersHistory = [];
+            }
+            
             this.hideLoading();
             this.renderScreen('order_history');
             
@@ -299,6 +316,8 @@ class RestaurantOrderApp {
             console.error('Load history error:', error);
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
+            // Все равно показываем экран истории, но с пустым списком
+            this.ordersHistory = [];
             this.renderScreen('order_history');
         }
     }    
@@ -567,6 +586,7 @@ class RestaurantOrderApp {
 
     // Рендер экрана истории заявок (остается без изменений)
     renderOrderHistoryScreen() {
+        console.log('Rendering history screen, orders count:', this.ordersHistory.length);
         let ordersHtml = '';
         
         if (this.ordersHistory.length === 0) {
@@ -575,24 +595,37 @@ class RestaurantOrderApp {
                     <div style="font-size: 3rem; margin-bottom: 20px;">📭</div>
                     <h3>Заявок пока нет</h3>
                     <p>Создайте первую заявку на главном экране</p>
+                    <p style="font-size: 12px; margin-top: 10px;">
+                    Или история временно недоступна
+                    </p>
                 </div>
             `;
         } else {
             this.ordersHistory.forEach(order => {
+                console.log(`Rendering order ${index}:`, order);
+            
+                // Безопасное форматирование даты
+                let orderDate = 'Дата неизвестна';
+                try {
+                    orderDate = new Date(order.date).toLocaleDateString('ru-RU');
+                } catch (e) {
+                    console.log('Date parsing error:', e);
+                }
+                
                 ordersHtml += `
                     <div class="order-item ${order.status}">
                         <div class="order-header">
-                            <span class="order-id">${order.order_id}</span>
-                            <span class="order-date">${new Date(order.date).toLocaleDateString('ru-RU')}</span>
+                            <span class="order-id">${order.order_id || 'Без номера'}</span>
+                            <span class="order-date">${orderDate}</span>
                         </div>
-                        <div class="order-details">
-                            <span>${order.template}</span>
-                            <span>${order.items_count} товаров</span>
-                        </div>
-                        <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
-                            ✅ Успешно отправлена
-                        </div>
+                    <div class="order-details">
+                        <span>${order.template || 'Без шаблона'}</span>
+                        <span>${order.items_count || 0} товаров</span>
                     </div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
+                        ✅ Успешно отправлена
+                    </div>
+                </div>
                 `;
             });
         }
@@ -637,5 +670,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
