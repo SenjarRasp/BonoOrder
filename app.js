@@ -16,15 +16,61 @@ class RestaurantOrderApp {
     init() {
         this.renderScreen('login');
         this.setupEventListeners();
+        this.hideLoading(); // Убедимся, что загрузка скрыта при старте
     }
 
+     // Показать анимацию загрузки
+    showLoading(text = 'Загрузка...') {
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        
+        if (overlay && loadingText) {
+            loadingText.textContent = text;
+            overlay.classList.add('active');
+        }
+    }
+
+    // Скрыть анимацию загрузки
+    hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Показать успешную анимацию
+    showSuccess(message = 'Успешно!') {
+        this.showLoading(message);
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        
+        if (overlay && loadingText) {
+            // Меняем анимацию на успех
+            overlay.innerHTML = `
+                <div class="success-checkmark">
+                    <div class="check-icon">
+                        <span class="icon-line line-tip"></span>
+                        <span class="icon-line line-long"></span>
+                        <div class="icon-circle"></div>
+                        <div class="icon-fix"></div>
+                    </div>
+                </div>
+                <div class="loading-text">${message}</div>
+            `;
+            
+            // Автоматически скрываем через 2 секунды
+            setTimeout(() => {
+                this.hideLoading();
+            }, 2000);
+        }
+    }
+    
     // Обработка логина
     async handleLogin(phone, password) {
         try {
-            this.showNotification('loading', 'Вход в систему...');
+            this.showLoading('Вход в систему...');
             const loginResult = await this.apiCall('login', { phone, password });
            
-            // Сохраняем информацию о пользователе
             this.currentUser = {
                 phone: loginResult.user.phone,
                 name: loginResult.user.name,
@@ -33,11 +79,13 @@ class RestaurantOrderApp {
                 templates: loginResult.user.templates
             };
             
-            console.log('✅ User logged in:', this.currentUser);
+            this.showSuccess(`Добро пожаловать, ${this.currentUser.name}!`);
+            setTimeout(() => {
+                this.renderScreen('main');
+            }, 2000);
             
-            this.renderScreen('main');
-            this.showNotification('success', `Добро пожаловать, ${this.currentUser.name}!`);
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', error.message);
         }
     }
@@ -45,14 +93,16 @@ class RestaurantOrderApp {
     // Загрузка доступных шаблонов
     async loadUserTemplates() {
         try {
-            this.showNotification('loading', 'Загрузка шаблонов...');
+            this.showLoading('Загрузка шаблонов...');
             const result = await this.apiCall('get_user_templates', {
                 userPhone: this.currentUser.phone
             });
             
             this.availableTemplates = result.templates;
+            this.hideLoading();
             this.renderScreen('template_selection');
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки шаблонов: ' + error.message);
         }
     }
@@ -60,17 +110,19 @@ class RestaurantOrderApp {
     // Загрузка товаров по шаблону
     async loadTemplateProducts(templateName) {
         try {
-            this.showNotification('loading', 'Загрузка товаров...');
+            this.showLoading('Загрузка товаров...');
             const result = await this.apiCall('get_products_by_template', {
                 templateName: templateName,
                 userPhone: this.currentUser.phone
             });
             
+            this.hideLoading();
             this.renderScreen('order_creation', { 
                 templateName: templateName,
                 products: result.products 
             });
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки товаров: ' + error.message);
         }
     }
@@ -85,28 +137,23 @@ class RestaurantOrderApp {
         
         try {
             const items = this.collectOrderItems();
-            console.log('Items to send:', items);
-            
             if (items.length === 0) {
                 this.showNotification('error', 'Добавьте хотя бы один товар в заявку');
                 return;
             }
             
-            this.showNotification('loading', 'Отправка заявки...');
+            this.showLoading('Отправка заявки поставщикам...');
             
             const requestData = {
                 userPhone: this.currentUser.phone,
                 userName: this.currentUser.name,
-                department: this.currentUser.department, // Добавляем отдел
+                department: this.currentUser.department,
                 templateName: templateName,
                 items: items
             };
             
-            console.log('API request data:', requestData);
-            
             const result = await this.apiCall('create_order', requestData);
             
-            // Сохраняем в историю
             this.ordersHistory.unshift({
                 order_id: result.order_id,
                 date: result.timestamp || new Date().toISOString(),
@@ -115,16 +162,14 @@ class RestaurantOrderApp {
                 items_count: items.length
             });
             
-            this.showNotification('success', 
-                `✅ Заявка ${result.order_id} отправлена!\n` +
-                `📧 Уведомления разосланы`
-            );
+            this.showSuccess(`Заявка ${result.order_id} отправлена!`);
             
             setTimeout(() => {
                 this.renderScreen('main');
-            }, 3000);
+            }, 2000);
             
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', 'Ошибка отправки: ' + error.message);
         }
     }
@@ -183,12 +228,14 @@ class RestaurantOrderApp {
     // Загрузка истории заявок
     async loadOrderHistory() {
         try {
-            this.showNotification('loading', 'Загрузка истории...');
+            this.showLoading('Загрузка истории...');
             this.ordersHistory = await this.apiCall('get_order_history', {
                 userPhone: this.currentUser.phone
             });
+            this.hideLoading();
             this.renderScreen('order_history');
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
             this.renderScreen('order_history');
         }
@@ -459,6 +506,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
