@@ -5,7 +5,7 @@
   "start_url": "/BonoOrder/?v=3",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#e74c3c",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "scope": "/BonoOrder/",
   "icons": [
