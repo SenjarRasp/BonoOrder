@@ -14,11 +14,6 @@ class RestaurantOrderApp {
         this.currentTemplateName = '';
         this.currentOrderData = {}; // Для хранения введённых данных
         this.isAdmin = false;
-        this.isSuperAdmin = false;
-
-        // Новые свойства для хранения данных
-        this.allTags = [];
-        this.allTemplates = [];
         
         this.init();
     }
@@ -221,12 +216,10 @@ class RestaurantOrderApp {
                 department: loginResult.user.department,
                 position: loginResult.user.position,
                 templates: loginResult.user.templates,
-                isAdmin: loginResult.user.isAdmin || false,
-                isSuperAdmin: loginResult.user.isSuperAdmin || false
+                isAdmin: loginResult.user.isAdmin || false
             };
 
             this.isAdmin = this.currentUser.isAdmin;
-            this.isSuperAdmin = this.currentUser.isSuperAdmin;
         
             this.showSuccess(`Добро пожаловать, ${this.currentUser.name}!`);
             setTimeout(() => {
@@ -525,18 +518,6 @@ class RestaurantOrderApp {
                 case 'order_history':
                     screenHTML = this.renderOrderHistoryScreen();
                     break;
-                case 'delete_product':
-                    screenHTML = this.renderDeleteProductScreen(data);
-                    break;
-                case 'delete_supplier':
-                    screenHTML = this.renderDeleteSupplierScreen(data);
-                    break;
-                case 'manage_templates':
-                    screenHTML = this.renderManageTemplatesScreen(data);
-                    break;
-                case 'manage_users':
-                    screenHTML = this.renderManageUsersScreen(data);
-                    break;
             }
             
             app.innerHTML = screenHTML;
@@ -554,189 +535,6 @@ class RestaurantOrderApp {
             
         }, 300);
     }
-
-    // Рендер экрана удаления товаров (обновленная версия)
-    renderDeleteProductScreen(data) {
-        const tagsOptions = data.tags ? data.tags.map(tag => 
-            `<option value="${tag}">${tag}</option>`
-        ).join('') : '';
-    
-        return `
-            <div class="main-screen screen-transition">
-                <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
-                    <h1>Удалить товары</h1>
-                </header>
-                
-                <div class="form">
-                    <div class="input-group">
-                        <label>Фильтр по тегам</label>
-                        <select id="filterTags" multiple style="height: 100px;">
-                            ${tagsOptions}
-                        </select>
-                        <small>Удерживайте Ctrl для выбора нескольких тегов</small>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Товары для удаления</label>
-                        <div id="productsList" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                            <p style="color: #7f8c8d; text-align: center;">Выберите теги для фильтрации товаров</p>
-                        </div>
-                    </div>
-                    
-                    <button type="button" class="btn primary delete-products-btn" style="width: 100%;">
-                        🗑️ Удалить выбранные товары
-                    </button>
-                </div>
-                
-                <div id="deleteStatus" class="status"></div>
-            </div>
-        `;
-    }
-    
-    // Рендер экрана удаления поставщиков (обновленная версия)
-    renderDeleteSupplierScreen(data) {
-        const suppliersOptions = data.suppliers ? data.suppliers.map(supplier => 
-            `<div class="checkbox-item">
-                <input type="checkbox" id="supplier_${supplier.name}" value="${supplier.name}">
-                <label for="supplier_${supplier.name}">${supplier.name} (${supplier.phone})</label>
-            </div>`
-        ).join('') : '';
-    
-        return `
-            <div class="main-screen screen-transition">
-                <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
-                    <h1>Удалить поставщиков</h1>
-                </header>
-                
-                <div class="form">
-                    <div class="input-group">
-                        <label>Поставщики для удаления</label>
-                        <div id="suppliersList" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                            ${suppliersOptions || '<p style="color: #7f8c8d; text-align: center;">Нет поставщиков для удаления</p>'}
-                        </div>
-                    </div>
-                    
-                    <button type="button" class="btn primary delete-suppliers-btn" style="width: 100%;">
-                        🏢❌ Удалить выбранных поставщиков
-                    </button>
-                </div>
-                
-                <div id="deleteStatus" class="status"></div>
-            </div>
-        `;
-    }
-    
-    // Рендер экрана управления шаблонами (обновленная версия)
-    renderManageTemplatesScreen(data) {
-        // Сохраняем теги для использования в getAllTagsOptions
-        this.allTags = data.allTags || [];
-        
-        const templatesHtml = data.templates ? data.templates.map((template, index) => `
-            <div class="template-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 2fr 1fr 2fr 2fr auto; gap: 10px; align-items: center;">
-                    <input type="text" value="${template.name}" placeholder="Название" class="template-name">
-                    <select class="template-type">
-                        <option value="daily" ${template.type === 'daily' ? 'selected' : ''}>Ежедневный</option>
-                        <option value="weekly" ${template.type === 'weekly' ? 'selected' : ''}>Еженедельный</option>
-                        <option value="anytime" ${template.type === 'anytime' ? 'selected' : ''}>Любое время</option>
-                    </select>
-                    <select class="template-tags" multiple style="height: 80px;">
-                        ${this.allTags.map(tag => 
-                            `<option value="${tag}" ${template.product_tags && template.product_tags.includes(tag) ? 'selected' : ''}>${tag}</option>`
-                        ).join('')}
-                    </select>
-                    <input type="text" value="${template.tg_id_admin}" placeholder="Telegram ID админа" class="template-tg-id">
-                    <button type="button" class="btn secondary remove-template-btn" style="padding: 5px 10px;">🗑️</button>
-                </div>
-            </div>
-        `).join('') : '';
-    
-        return `
-            <div class="main-screen screen-transition">
-                <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
-                    <h1>Управление шаблонами</h1>
-                </header>
-                
-                <div class="form">
-                    <div id="templatesList">
-                        ${templatesHtml}
-                    </div>
-                    
-                    <button type="button" class="btn secondary add-template-btn" style="width: 100%; margin-bottom: 20px;">
-                        ➕ Добавить новый шаблон
-                    </button>
-                    
-                    <button type="button" class="btn primary update-templates-btn" style="width: 100%;">
-                        💾 Сохранить изменения
-                    </button>
-                </div>
-                
-                <div id="templateStatus" class="status"></div>
-            </div>
-        `;
-    }
-    
-    // Рендер экрана управления пользователями
-    renderManageUsersScreen(data) {
-        // Сохраняем шаблоны для использования в getAllTemplatesOptions
-        this.allTemplates = data.allTemplates || [];
-        
-        const usersHtml = data.users ? data.users.map((user, index) => `
-            <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr auto; gap: 10px; align-items: center;">
-                    <input type="text" value="${user.phone}" placeholder="Телефон" class="user-phone" data-index="${index}">
-                    <input type="text" value="${user.name}" placeholder="Имя" class="user-name" data-index="${index}">
-                    <input type="password" value="${user.password}" placeholder="Пароль" class="user-password" data-index="${index}">
-                    <input type="text" value="${user.department}" placeholder="Отдел" class="user-department" data-index="${index}">
-                    <input type="text" value="${user.position}" placeholder="Должность" class="user-position" data-index="${index}">
-                    <select class="user-active" data-index="${index}">
-                        <option value="TRUE" ${user.is_active === 'TRUE' ? 'selected' : ''}>Активен</option>
-                        <option value="FALSE" ${user.is_active === 'FALSE' ? 'selected' : ''}>Неактивен</option>
-                    </select>
-                    <select class="user-templates" multiple data-index="${index}" style="height: 80px;">
-                        ${this.allTemplates.map(template => 
-                            `<option value="${template}" ${user.templates && user.templates.includes(template) ? 'selected' : ''}>${template}</option>`
-                        ).join('')}
-                    </select>
-                    <select class="user-admin" data-index="${index}">
-                        <option value="FALSE" ${user.admin === 'FALSE' ? 'selected' : ''}>Обычный</option>
-                        <option value="TRUE" ${user.admin === 'TRUE' ? 'selected' : ''}>Админ</option>
-                        <option value="SUPER" ${user.admin === 'SUPER' ? 'selected' : ''}>Супер-админ</option>
-                    </select>
-                    <button type="button" class="btn secondary" onclick="app.removeUser(${index})" style="padding: 5px 10px;">🗑️</button>
-                </div>
-            </div>
-        `).join('') : '';
-    
-        return `
-            <div class="main-screen screen-transition">
-                <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
-                    <h1>Управление пользователями</h1>
-                </header>
-                
-                <div class="form">
-                    <div id="usersList">
-                        ${usersHtml}
-                    </div>
-                    
-                    <button type="button" class="btn secondary" onclick="app.addNewUser()" style="width: 100%; margin-bottom: 20px;">
-                        ➕ Добавить нового пользователя
-                    </button>
-                    
-                    <button type="button" class="btn primary" onclick="app.handleUpdateUsers()" style="width: 100%;">
-                        💾 Сохранить изменения
-                    </button>
-                </div>
-                
-                <div id="userStatus" class="status"></div>
-            </div>
-        `;
-    }
-    
     // Рендер экрана добавления товара
     renderAddProductScreen(data) {
         const tagsOptions = data.tags ? data.tags.map(tag => 
@@ -883,40 +681,6 @@ class RestaurantOrderApp {
                     <p>Добавить нового поставщика</p>
                 </div>
             </div>
-            
-            <div class="action-card" onclick="app.handleMainAction('delete_product')">
-                <div class="action-content">
-                    <div class="action-icon">🗑️</div>
-                    <h3>Удалить товар</h3>
-                    <p>Удалить товары из базы</p>
-                </div>
-            </div>
-            
-            <div class="action-card" onclick="app.handleMainAction('delete_supplier')">
-                <div class="action-content">
-                    <div class="action-icon">🏢❌</div>
-                    <h3>Удалить поставщика</h3>
-                    <p>Удалить поставщиков из базы</p>
-                </div>
-            </div>
-        ` : '';
-    
-        const superAdminActions = this.isSuperAdmin ? `
-            <div class="action-card" onclick="app.handleMainAction('manage_templates')">
-                <div class="action-content">
-                    <div class="action-icon">⚙️</div>
-                    <h3>Настроить шаблоны</h3>
-                    <p>Управление шаблонами заявок</p>
-                </div>
-            </div>
-            
-            <div class="action-card" onclick="app.handleMainAction('manage_users')">
-                <div class="action-content">
-                    <div class="action-icon">👥</div>
-                    <h3>Пользователи</h3>
-                    <p>Управление пользователями</p>
-                </div>
-            </div>
         ` : '';
     
         return `
@@ -925,7 +689,7 @@ class RestaurantOrderApp {
                     <h1>Главная</h1>
                     <div class="user-info">
                         ${this.currentUser.department} • ${this.currentUser.position}
-                        ${this.isSuperAdmin ? ' 👑 Супер-админ' : this.isAdmin ? ' 🔧 Админ' : ''}
+                        ${this.isAdmin ? ' • 👑' : ''}
                     </div>
                 </header>
                 
@@ -947,7 +711,6 @@ class RestaurantOrderApp {
                     </div>
                     
                     ${adminActions}
-                    ${superAdminActions}
                     
                     <div class="action-card" onclick="app.handleMainAction('logout')">
                         <div class="action-content">
@@ -961,8 +724,6 @@ class RestaurantOrderApp {
                 <div class="notifications">
                     <h3>👋 Добро пожаловать, ${this.currentUser.name}!</h3>
                     <p>Доступные шаблоны: ${this.currentUser.templates.join(', ')}</p>
-                    ${this.isAdmin ? '<p>🔧</p>' : ''}
-                    ${this.isSuperAdmin ? '<p>👑</p>' : ''}
                 </div>
             </div>
         `;
@@ -983,29 +744,13 @@ class RestaurantOrderApp {
                 case 'history':
                     this.loadOrderHistory();
                     break;
-                    
+                
                 case 'add_product':
                     this.showAddProductScreen();
                     break;
-                    
+                
                 case 'add_supplier':
                     this.showAddSupplierScreen();
-                    break;
-                    
-                case 'delete_product':
-                    this.showDeleteProductScreen();
-                    break;
-                    
-                case 'delete_supplier':
-                    this.showDeleteSupplierScreen();
-                    break;
-                    
-                case 'manage_templates':
-                    this.showManageTemplatesScreen();
-                    break;
-                    
-                case 'manage_users':
-                    this.showManageUsersScreen();
                     break;
                     
                 case 'logout':
@@ -1059,355 +804,6 @@ class RestaurantOrderApp {
         `;
     }
 
-    // Фильтрация товаров по тегам
-    async filterProductsByTags() {
-        const tagsSelect = document.getElementById('filterTags');
-        const selectedTags = Array.from(tagsSelect.selectedOptions).map(opt => opt.value);
-        
-        if (selectedTags.length === 0) {
-            document.getElementById('productsList').innerHTML = '<p style="color: #7f8c8d; text-align: center;">Выберите теги для фильтрации товаров</p>';
-            return;
-        }
-        
-        try {
-            this.showLoading('Фильтрация товаров...');
-            const data = await this.apiCall('get_products_by_tags', { tags: selectedTags });
-            this.hideLoading();
-            
-            const productsHtml = data.products.map(product => `
-                <div class="checkbox-item">
-                    <input type="checkbox" id="product_${product.name}" value="${product.name}">
-                    <label for="product_${product.name}">${product.name} (${product.unit}) - ${product.supplier}</label>
-                </div>
-            `).join('');
-            
-            document.getElementById('productsList').innerHTML = productsHtml || '<p style="color: #7f8c8d; text-align: center;">Товары не найдены</p>';
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка фильтрации: ' + error.message);
-        }
-    }
-    
-    // Обработчик удаления товаров
-    handleDeleteProducts() {
-        const checkboxes = document.querySelectorAll('#productsList input[type="checkbox"]:checked');
-        const productNames = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (productNames.length === 0) {
-            this.showNotification('error', 'Выберите товары для удаления');
-            return;
-        }
-        
-        if (confirm(`Вы уверены, что хотите удалить ${productNames.length} товаров?`)) {
-            this.deleteProducts(productNames);
-        }
-    }
-    
-    // Обработчик удаления поставщиков
-    handleDeleteSuppliers() {
-        const checkboxes = document.querySelectorAll('#suppliersList input[type="checkbox"]:checked');
-        const supplierNames = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (supplierNames.length === 0) {
-            this.showNotification('error', 'Выберите поставщиков для удаления');
-            return;
-        }
-        
-        if (confirm(`Вы уверены, что хотите удалить ${supplierNames.length} поставщиков?`)) {
-            this.deleteSuppliers(supplierNames);
-        }
-    }
-    
-    // Добавить новый шаблон
-    addNewTemplate() {
-        const templatesList = document.getElementById('templatesList');
-        const newIndex = templatesList.children.length;
-        
-        const newTemplateHtml = `
-            <div class="template-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 2fr 1fr 2fr 2fr auto; gap: 10px; align-items: center;">
-                    <input type="text" placeholder="Название" class="template-name" data-index="${newIndex}">
-                    <select class="template-type" data-index="${newIndex}">
-                        <option value="daily">Ежедневный</option>
-                        <option value="weekly">Еженедельный</option>
-                        <option value="anytime">Любое время</option>
-                    </select>
-                    <select class="template-tags" multiple data-index="${newIndex}" style="height: 80px;">
-                        ${this.getAllTagsOptions()}
-                    </select>
-                    <input type="text" placeholder="Telegram ID админа" class="template-tg-id" data-index="${newIndex}">
-                    <button type="button" class="btn secondary" onclick="app.removeTemplate(${newIndex})" style="padding: 5px 10px;">🗑️</button>
-                </div>
-            </div>
-        `;
-        
-        templatesList.insertAdjacentHTML('beforeend', newTemplateHtml);
-    }
-    
-    // Удалить шаблон
-    removeTemplate(index) {
-        const templateItem = document.querySelector(`.template-item .template-name[data-index="${index}"]`).closest('.template-item');
-        if (templateItem) {
-            templateItem.remove();
-        }
-    }
-    
-    // Добавить нового пользователя
-    addNewUser() {
-        const usersList = document.getElementById('usersList');
-        const newIndex = usersList.children.length;
-        
-        const newUserHtml = `
-            <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr auto; gap: 10px; align-items: center;">
-                    <input type="text" placeholder="Телефон" class="user-phone" data-index="${newIndex}">
-                    <input type="text" placeholder="Имя" class="user-name" data-index="${newIndex}">
-                    <input type="password" placeholder="Пароль" class="user-password" data-index="${newIndex}">
-                    <input type="text" placeholder="Отдел" class="user-department" data-index="${newIndex}">
-                    <input type="text" placeholder="Должность" class="user-position" data-index="${newIndex}">
-                    <select class="user-active" data-index="${newIndex}">
-                        <option value="TRUE">Активен</option>
-                        <option value="FALSE">Неактивен</option>
-                    </select>
-                    <select class="user-templates" multiple data-index="${newIndex}" style="height: 80px;">
-                        ${this.getAllTemplatesOptions()}
-                    </select>
-                    <select class="user-admin" data-index="${newIndex}">
-                        <option value="FALSE">Обычный</option>
-                        <option value="TRUE">Админ</option>
-                        <option value="SUPER">Супер-админ</option>
-                    </select>
-                    <button type="button" class="btn secondary" onclick="app.removeUser(${newIndex})" style="padding: 5px 10px;">🗑️</button>
-                </div>
-            </div>
-        `;
-        
-        usersList.insertAdjacentHTML('beforeend', newUserHtml);
-    }
-    
-    // Удалить пользователя
-    removeUser(index) {
-        const userItem = document.querySelector(`.user-item .user-phone[data-index="${index}"]`).closest('.user-item');
-        if (userItem) {
-            userItem.remove();
-        }
-    }
-    
-    // Обработчик обновления шаблонов
-    handleUpdateTemplates() {
-        const templateItems = document.querySelectorAll('.template-item');
-        const templates = [];
-        
-        templateItems.forEach(item => {
-            const name = item.querySelector('.template-name').value;
-            const type = item.querySelector('.template-type').value;
-            const tagsSelect = item.querySelector('.template-tags');
-            const product_tags = Array.from(tagsSelect.selectedOptions).map(opt => opt.value).join(',');
-            const tg_id_admin = item.querySelector('.template-tg-id').value;
-            
-            if (name) {
-                templates.push({
-                    name,
-                    type,
-                    product_tags,
-                    tg_id_admin
-                });
-            }
-        });
-        
-        if (templates.length === 0) {
-            this.showNotification('error', 'Добавьте хотя бы один шаблон');
-            return;
-        }
-        
-        this.updateTemplates(templates);
-    }
-    
-    // Обработчик обновления пользователей
-    handleUpdateUsers() {
-        const userItems = document.querySelectorAll('.user-item');
-        const users = [];
-        
-        userItems.forEach(item => {
-            const phone = item.querySelector('.user-phone').value;
-            const name = item.querySelector('.user-name').value;
-            const password = item.querySelector('.user-password').value;
-            const department = item.querySelector('.user-department').value;
-            const position = item.querySelector('.user-position').value;
-            const is_active = item.querySelector('.user-active').value;
-            const templatesSelect = item.querySelector('.user-templates');
-            const templates = Array.from(templatesSelect.selectedOptions).map(opt => opt.value).join(',');
-            const admin = item.querySelector('.user-admin').value;
-            
-            if (phone && name && password) {
-                users.push({
-                    phone,
-                    name,
-                    password,
-                    department,
-                    position,
-                    is_active,
-                    templates,
-                    admin
-                });
-            }
-        });
-        
-        if (users.length === 0) {
-            this.showNotification('error', 'Добавьте хотя бы одного пользователя');
-            return;
-        }
-        
-        this.updateUsers(users);
-    }
-    
-    // Вспомогательные методы для получения опций
-    getAllTagsOptions() {
-        if (this.allTags && this.allTags.length > 0) {
-            return this.allTags.map(tag => 
-                `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`
-            ).join('');
-        } else {
-            console.warn('Теги не загружены');
-            return '<option value="">Загрузка тегов...</option>';
-        }
-    }
-    
-    getAllTemplatesOptions() {
-        if (this.allTemplates && this.allTemplates.length > 0) {
-            return this.allTemplates.map(template => 
-                `<option value="${this.escapeHtml(template)}">${this.escapeHtml(template)}</option>`
-            ).join('');
-        } else {
-            console.warn('Шаблоны не загружены');
-            return '<option value="">Загрузка шаблонов...</option>';
-        }
-    }
-    
-    // Вспомогательный метод для экранирования HTML
-    escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return unsafe
-            .toString()
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-    
-    // Показать экран удаления товаров
-    async showDeleteProductScreen() {
-        try {
-            this.showLoading('Загрузка данных...');
-            const data = await this.apiCall('get_product_form_data');
-            this.hideLoading();
-            this.renderScreen('delete_product', data);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка загрузки: ' + error.message);
-        }
-    }
-    
-    // Показать экран удаления поставщиков
-    async showDeleteSupplierScreen() {
-        try {
-            this.showLoading('Загрузка данных...');
-            const data = await this.apiCall('get_suppliers_for_deletion');
-            this.hideLoading();
-            this.renderScreen('delete_supplier', data);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка загрузки: ' + error.message);
-        }
-    }
-    
-    // Удалить товары
-    async deleteProducts(productNames) {
-        try {
-            this.showLoading('Удаление товаров...');
-            const result = await this.apiCall('delete_products', { productNames });
-            this.showSuccess('Товары успешно удалены!');
-            setTimeout(() => {
-                this.renderScreen('main');
-            }, 2000);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка удаления: ' + error.message);
-        }
-    }
-    
-    // Удалить поставщиков
-    async deleteSuppliers(supplierNames) {
-        try {
-            this.showLoading('Удаление поставщиков...');
-            const result = await this.apiCall('delete_suppliers', { supplierNames });
-            this.showSuccess('Поставщики успешно удалены!');
-            setTimeout(() => {
-                this.renderScreen('main');
-            }, 2000);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка удаления: ' + error.message);
-        }
-    }
-
-    // Показать экран управления шаблонами
-    async showManageTemplatesScreen() {
-        try {
-            this.showLoading('Загрузка шаблонов...');
-            const data = await this.apiCall('get_templates_management');
-            this.hideLoading();
-            this.renderScreen('manage_templates', data);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка загрузки: ' + error.message);
-        }
-    }
-    
-    // Показать экран управления пользователями
-    async showManageUsersScreen() {
-        try {
-            this.showLoading('Загрузка пользователей...');
-            const data = await this.apiCall('get_users_management');
-            this.hideLoading();
-            this.renderScreen('manage_users', data);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка загрузки: ' + error.message);
-        }
-    }
-    
-    // Обновить шаблоны
-    async updateTemplates(templates) {
-        try {
-            this.showLoading('Сохранение шаблонов...');
-            const result = await this.apiCall('update_templates', { templates });
-            this.showSuccess('Шаблоны успешно обновлены!');
-            setTimeout(() => {
-                this.renderScreen('main');
-            }, 2000);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка сохранения: ' + error.message);
-        }
-    }
-    
-    // Обновить пользователей
-    async updateUsers(users) {
-        try {
-            this.showLoading('Сохранение пользователей...');
-            const result = await this.apiCall('update_users', { users });
-            this.showSuccess('Пользователи успешно обновлены!');
-            setTimeout(() => {
-                this.renderScreen('main');
-            }, 2000);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка сохранения: ' + error.message);
-        }
-    }
-    
     // Показать экран добавления товара
     async showAddProductScreen() {
         try {
@@ -1871,98 +1267,29 @@ class RestaurantOrderApp {
 
     // Настройка обработчиков событий
     setupEventListeners() {
-        // Обработчики форм
         document.addEventListener('submit', (e) => {
-            e.preventDefault();
+            if (e.target.id === 'loginForm') {
+                e.preventDefault();
+                const phone = document.getElementById('phone').value;
+                const password = document.getElementById('password').value;
+                this.handleLogin(phone, password);
+            }
             
-            switch(e.target.id) {
-                case 'loginForm':
-                    const phone = document.getElementById('phone').value;
-                    const password = document.getElementById('password').value;
-                    this.handleLogin(phone, password);
-                    break;
-                    
-                case 'addProductForm':
-                    this.handleAddProduct();
-                    break;
-                    
-                case 'addSupplierForm':
-                    this.handleAddSupplier();
-                    break;
+            if (e.target.id === 'addProductForm') {
+                e.preventDefault();
+                this.handleAddProduct();
+            }
+            
+            if (e.target.id === 'addSupplierForm') {
+                e.preventDefault();
+                this.handleAddSupplier();
             }
         });
     
-        // Обработчики для динамически создаваемых элементов
+        // Обработчик изменения выбора тега
         document.addEventListener('change', (e) => {
-            // Обработка изменения тегов фильтра для удаления товаров
-            if (e.target.id === 'filterTags') {
-                this.filterProductsByTags();
-            }
-        });
-    
-        // Обработчики для кнопок (делегирование событий)
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            
-            // Удаление товаров
-            if (target.classList.contains('delete-products-btn')) {
-                this.handleDeleteProducts();
-            }
-            
-            // Удаление поставщиков
-            if (target.classList.contains('delete-suppliers-btn')) {
-                this.handleDeleteSuppliers();
-            }
-            
-            // Обновление шаблонов
-            if (target.classList.contains('update-templates-btn')) {
-                this.handleUpdateTemplates();
-            }
-            
-            // Обновление пользователей
-            if (target.classList.contains('update-users-btn')) {
-                this.handleUpdateUsers();
-            }
-            
-            // Добавление шаблона
-            if (target.classList.contains('add-template-btn')) {
-                this.addNewTemplate();
-            }
-            
-            // Добавление пользователя
-            if (target.classList.contains('add-user-btn')) {
-                this.addNewUser();
-            }
-            
-            // Удаление шаблона
-            if (target.classList.contains('remove-template-btn')) {
-                const templateItem = target.closest('.template-item');
-                if (templateItem) {
-                    templateItem.remove();
-                }
-            }
-            
-            // Удаление пользователя
-            if (target.classList.contains('remove-user-btn')) {
-                const userItem = target.closest('.user-item');
-                if (userItem) {
-                    userItem.remove();
-                }
-            }
-            
-            // Кнопки назад
-            if (target.classList.contains('back-btn')) {
-                const screen = target.getAttribute('data-back-to') || 'main';
-                this.renderScreen(screen);
-            }
-        });
-    
-        // Обработчики ввода для реального времени
-        document.addEventListener('input', (e) => {
-            // Можно добавить валидацию в реальном времени
-            if (e.target.classList.contains('quantity-input') || 
-                e.target.classList.contains('comment-input')) {
-                this.saveCurrentFormData();
+            if (e.target.id === 'productTags') {
+                this.handleTagSelection(e.target.value);
             }
         });
     }
@@ -1982,104 +1309,6 @@ class RestaurantOrderApp {
         }
     }
 
-    // Обработчик удаления товаров (для динамических кнопок)
-    handleDeleteProducts() {
-        const checkboxes = document.querySelectorAll('#productsList input[type="checkbox"]:checked');
-        const productNames = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (productNames.length === 0) {
-            this.showNotification('error', 'Выберите товары для удаления');
-            return;
-        }
-        
-        if (confirm(`Вы уверены, что хотите удалить ${productNames.length} товаров?`)) {
-            this.deleteProducts(productNames);
-        }
-    }
-    
-    // Обработчик удаления поставщиков (для динамических кнопок)
-    handleDeleteSuppliers() {
-        const checkboxes = document.querySelectorAll('#suppliersList input[type="checkbox"]:checked');
-        const supplierNames = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (supplierNames.length === 0) {
-            this.showNotification('error', 'Выберите поставщиков для удаления');
-            return;
-        }
-        
-        if (confirm(`Вы уверены, что хотите удалить ${supplierNames.length} поставщиков?`)) {
-            this.deleteSuppliers(supplierNames);
-        }
-    }
-    
-    // Обработчик обновления шаблонов (для динамических кнопок)
-    handleUpdateTemplates() {
-        const templateItems = document.querySelectorAll('.template-item');
-        const templates = [];
-        
-        templateItems.forEach(item => {
-            const name = item.querySelector('.template-name').value;
-            const type = item.querySelector('.template-type').value;
-            const tagsSelect = item.querySelector('.template-tags');
-            const product_tags = Array.from(tagsSelect.selectedOptions).map(opt => opt.value).join(',');
-            const tg_id_admin = item.querySelector('.template-tg-id').value;
-            
-            if (name) {
-                templates.push({
-                    name,
-                    type,
-                    product_tags,
-                    tg_id_admin
-                });
-            }
-        });
-        
-        if (templates.length === 0) {
-            this.showNotification('error', 'Добавьте хотя бы один шаблон');
-            return;
-        }
-        
-        this.updateTemplates(templates);
-    }
-    
-    // Обработчик обновления пользователей (для динамических кнопок)
-    handleUpdateUsers() {
-        const userItems = document.querySelectorAll('.user-item');
-        const users = [];
-        
-        userItems.forEach(item => {
-            const phone = item.querySelector('.user-phone').value;
-            const name = item.querySelector('.user-name').value;
-            const password = item.querySelector('.user-password').value;
-            const department = item.querySelector('.user-department').value;
-            const position = item.querySelector('.user-position').value;
-            const is_active = item.querySelector('.user-active').value;
-            const templatesSelect = item.querySelector('.user-templates');
-            const templates = Array.from(templatesSelect.selectedOptions).map(opt => opt.value).join(',');
-            const admin = item.querySelector('.user-admin').value;
-            
-            if (phone && name && password) {
-                users.push({
-                    phone,
-                    name,
-                    password,
-                    department,
-                    position,
-                    is_active,
-                    templates,
-                    admin
-                });
-            }
-        });
-        
-        if (users.length === 0) {
-            this.showNotification('error', 'Добавьте хотя бы одного пользователя');
-            return;
-        }
-        
-        this.updateUsers(users);
-    }
-    
     // Обработчик добавления товара
     handleAddProduct() {
         const name = document.getElementById('productName').value;
@@ -2164,17 +1393,3 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
