@@ -22,7 +22,7 @@ body {
 }
 /* Стили для форм добавления */
 .form {
-    max-width: 500px;
+    max-width: 200px;
     margin: 0 auto;
 }
 
@@ -1330,5 +1330,6 @@ input:focus, textarea:focus, select:focus {
     padding: 30px;
     font-style: italic;
 }
+
 
 
