@@ -1057,11 +1057,12 @@ input:focus, textarea:focus, select:focus {
 
 /* Дополнительные стили для лучшей читаемости */
 .toggle-text-supplier::before {
-    content: "📦 ";
+    content: "";
     font-size: 12px;
 }
 
 .toggle-text-tags::before {
-    content: "🏷️ ";
+    content: "";
     font-size: 12px;
 }
+
