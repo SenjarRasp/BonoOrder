@@ -1,5 +1,5 @@
 // sw.js - Service Worker для Restaurant Orders
-const CACHE_NAME = 'restaurant-orders-v3';
+const CACHE_NAME = 'restaurant-orders-v4';
 const urlsToCache = [
   '/BonoOrder/',
   '/BonoOrder/index.html',
@@ -82,5 +82,6 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
 
 
