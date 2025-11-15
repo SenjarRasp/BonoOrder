@@ -1263,25 +1263,37 @@ class RestaurantOrderApp {
     
     // Вспомогательные методы для получения опций
     getAllTagsOptions() {
-        // Получаем теги из текущих данных или делаем запрос к серверу
         if (this.allTags && this.allTags.length > 0) {
-            return this.allTags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+            return this.allTags.map(tag => 
+                `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`
+            ).join('');
         } else {
-            // Если теги не загружены, возвращаем пустую строку
             console.warn('Теги не загружены');
-            return '';
+            return '<option value="">Загрузка тегов...</option>';
         }
     }
     
     getAllTemplatesOptions() {
-        // Получаем названия шаблонов из текущих данных или делаем запрос к серверу
         if (this.allTemplates && this.allTemplates.length > 0) {
-            return this.allTemplates.map(template => `<option value="${template}">${template}</option>`).join('');
+            return this.allTemplates.map(template => 
+                `<option value="${this.escapeHtml(template)}">${this.escapeHtml(template)}</option>`
+            ).join('');
         } else {
-            // Если шаблоны не загружены, возвращаем пустую строку
             console.warn('Шаблоны не загружены');
-            return '';
+            return '<option value="">Загрузка шаблонов...</option>';
         }
+    }
+    
+    // Вспомогательный метод для экранирования HTML
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
     
     // Показать экран удаления товаров
@@ -1859,6 +1871,7 @@ class RestaurantOrderApp {
 
     // Настройка обработчиков событий
     setupEventListeners() {
+        // Обработчики форм
         document.addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -1887,30 +1900,69 @@ class RestaurantOrderApp {
             }
         });
     
-        // Обработчики для кнопок удаления
+        // Обработчики для кнопок (делегирование событий)
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-products-btn')) {
+            const target = e.target;
+            
+            // Удаление товаров
+            if (target.classList.contains('delete-products-btn')) {
                 this.handleDeleteProducts();
             }
             
-            if (e.target.classList.contains('delete-suppliers-btn')) {
+            // Удаление поставщиков
+            if (target.classList.contains('delete-suppliers-btn')) {
                 this.handleDeleteSuppliers();
             }
             
-            if (e.target.classList.contains('update-templates-btn')) {
+            // Обновление шаблонов
+            if (target.classList.contains('update-templates-btn')) {
                 this.handleUpdateTemplates();
             }
             
-            if (e.target.classList.contains('update-users-btn')) {
+            // Обновление пользователей
+            if (target.classList.contains('update-users-btn')) {
                 this.handleUpdateUsers();
             }
             
-            if (e.target.classList.contains('add-template-btn')) {
+            // Добавление шаблона
+            if (target.classList.contains('add-template-btn')) {
                 this.addNewTemplate();
             }
             
-            if (e.target.classList.contains('add-user-btn')) {
+            // Добавление пользователя
+            if (target.classList.contains('add-user-btn')) {
                 this.addNewUser();
+            }
+            
+            // Удаление шаблона
+            if (target.classList.contains('remove-template-btn')) {
+                const templateItem = target.closest('.template-item');
+                if (templateItem) {
+                    templateItem.remove();
+                }
+            }
+            
+            // Удаление пользователя
+            if (target.classList.contains('remove-user-btn')) {
+                const userItem = target.closest('.user-item');
+                if (userItem) {
+                    userItem.remove();
+                }
+            }
+            
+            // Кнопки назад
+            if (target.classList.contains('back-btn')) {
+                const screen = target.getAttribute('data-back-to') || 'main';
+                this.renderScreen(screen);
+            }
+        });
+    
+        // Обработчики ввода для реального времени
+        document.addEventListener('input', (e) => {
+            // Можно добавить валидацию в реальном времени
+            if (e.target.classList.contains('quantity-input') || 
+                e.target.classList.contains('comment-input')) {
+                this.saveCurrentFormData();
             }
         });
     }
@@ -2112,6 +2164,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
