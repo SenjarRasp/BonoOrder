@@ -12,6 +12,7 @@ class RestaurantOrderApp {
         this.currentGroupBy = 'supplier'; // 'supplier' или 'tags'
         this.currentProducts = [];
         this.currentTemplateName = '';
+        this.currentOrderData = {}; // Для хранения введённых данных
         
         this.init();
     }
@@ -21,8 +22,64 @@ class RestaurantOrderApp {
         this.setupEventListeners();
         this.hideLoading(); // Убедимся, что загрузка скрыта при старте
     }
+
+    // Метод для сохранения текущих данных формы
+    saveCurrentFormData() {
+        const formData = {};
+        const quantityInputs = document.querySelectorAll('.quantity-input');
+        const commentInputs = document.querySelectorAll('.comment-input');
+        
+        quantityInputs.forEach(input => {
+            const productName = input.dataset.productName;
+            const supplier = input.dataset.supplier;
+            const key = `${productName}|${supplier}`;
+            const quantity = parseInt(input.value) || 0;
+            
+            if (!formData[key]) {
+                formData[key] = {};
+            }
+            formData[key].quantity = quantity;
+        });
+        
+        commentInputs.forEach(input => {
+            const productName = input.dataset.productName;
+            const supplier = input.dataset.supplier;
+            const key = `${productName}|${supplier}`;
+            const comment = input.value;
+            
+            if (!formData[key]) {
+                formData[key] = {};
+            }
+            formData[key].comment = comment;
+        });
+        
+        // Сохраняем данные перед перерисовкой
+        this.currentOrderData = { ...this.currentOrderData, ...formData };
+    }
+
+    // Метод для восстановления данных в форме
+    restoreFormData() {
+        Object.keys(this.currentOrderData).forEach(key => {
+            const [productName, supplier] = key.split('|');
+            const data = this.currentOrderData[key];
+            
+            // Восстанавливаем количество
+            const quantityInput = document.querySelector(`.quantity-input[data-product-name="${productName}"][data-supplier="${supplier}"]`);
+            if (quantityInput && data.quantity) {
+                quantityInput.value = data.quantity;
+            }
+            
+            // Восстанавливаем комментарий
+            const commentInput = document.querySelector(`.comment-input[data-product-name="${productName}"][data-supplier="${supplier}"]`);
+            if (commentInput && data.comment) {
+                commentInput.value = data.comment;
+            }
+        });
+    }
+    
     // Метод для изменения способа группировки
     changeGroupBy(groupBy) {
+        this.saveCurrentFormData();
         this.currentGroupBy = groupBy;
         // Перерисовываем экран с новым способом группировки
         this.renderScreen('order_creation', {
@@ -446,6 +503,11 @@ class RestaurantOrderApp {
             }
             
             app.innerHTML = screenHTML;
+
+            // Инициализируем toggle switch если это экран заявки
+            if (screenName === 'order_creation') {
+                this.initToggleSwitch();
+            }
             
         }, 300);
     }
@@ -627,27 +689,19 @@ class RestaurantOrderApp {
         return `
             <div class="order-screen screen-transition">
                 <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('template_selection')">← Назад</button>
+                    <button class="back-btn" onclick="app.renderScreen('template_selection')">◀️ Назад</button>
                     <h1>${data.templateName}</h1>
                 </header>
                 
-                <!-- Переключатель способа группировки -->
-                <div class="grouping-selector" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Сортировка товаров:</label>
-                    <div style="display: flex; gap: 15px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="groupBy" value="supplier" 
-                                   ${this.currentGroupBy === 'supplier' ? 'checked' : ''}
-                                   onchange="app.changeGroupBy('supplier')"
-                                   style="margin-right: 8px;">
-                            📦 По поставщикам
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="groupBy" value="tags" 
-                                   ${this.currentGroupBy === 'tags' ? 'checked' : ''}
-                                   onchange="app.changeGroupBy('tags')"
-                                   style="margin-right: 8px;">
-                            🏷️ По тегам
+                <!-- Toggle Switch для сортировки -->
+                <div class="grouping-toggle-container">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="groupingToggle" class="toggle-checkbox" 
+                               ${this.currentGroupBy === 'tags' ? 'checked' : ''}>
+                        <label class="toggle-label" for="groupingToggle">
+                            <span class="toggle-handle"></span>
+                            <span class="toggle-text-supplier">📦 Поставщикам</span>
+                            <span class="toggle-text-tags">🏷️ По тегам</span>
                         </label>
                     </div>
                 </div>
@@ -662,6 +716,12 @@ class RestaurantOrderApp {
                 <div id="orderStatus" class="status"></div>
             </div>
         `;
+    }
+    // Новый метод для обработки выхода из экрана заявки
+    handleBackFromOrder() {
+        // Сохраняем данные перед уходом
+        this.saveCurrentFormData();
+        this.renderScreen('template_selection');
     }
     // Рендер товаров по поставщикам (существующая логика)
     renderProductsBySupplier(products) {
@@ -730,6 +790,11 @@ class RestaurantOrderApp {
     }
      // Вынесенный метод рендера одного товара (для переиспользования)
     renderProductItem(product) {
+        const key = `${product.name}|${product.supplier}`;
+        const savedData = this.currentOrderData[key] || {};
+        const savedQuantity = savedData.quantity || 0;
+        const savedComment = savedData.comment || '';
+        
         return `
             <div class="product-item">
                 <div class="product-info">
@@ -750,7 +815,9 @@ class RestaurantOrderApp {
                 <input type="text" 
                        class="comment-input" 
                        placeholder="Комментарий"
-                       data-product-name="${product.name}">
+                       data-product-name="${product.name}"
+                       data-supplier="${product.supplier}"
+                       value="${savedComment}">
             </div>
         `;
     }
@@ -829,7 +896,19 @@ class RestaurantOrderApp {
             }
         });
     }
-
+    initToggleSwitch() {
+        const toggle = document.getElementById('groupingToggle');
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                this.changeGroupBy(e.target.checked ? 'tags' : 'supplier');
+            });
+        }
+        
+        // Восстанавливаем данные формы после рендера
+        setTimeout(() => {
+            this.restoreFormData();
+        }, 100);
+    }
     // Выход из системы
     logout() {
         this.currentUser = null;
@@ -842,5 +921,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
