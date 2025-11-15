@@ -43,7 +43,22 @@ body {
     background: #2d2e2d;
     transform: translateY(-2px);
 }
+/* Компактная кнопка отправки */
+.order-screen .btn.primary {
+    padding: 12px 20px;
+    font-size: 16px;
+    margin-top: 15px;
+}
+/* Уменьшаем отступы header */
+.order-screen .header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+}
 
+.order-screen .header h1 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
 .btn.secondary {
     background: #95a5a6;
     color: white;
@@ -74,6 +89,36 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: #3498db;
+}
+/* Адаптивность для очень маленьких экранов */
+@media (max-width: 360px) {
+    .order-screen {
+        padding: 10px;
+    }
+    
+    .product-item {
+        padding: 6px 0;
+        gap: 6px;
+    }
+    
+    .quantity-input {
+        width: 50px;
+        padding: 5px 6px;
+        font-size: 13px;
+    }
+    
+    .comment-input {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+    
+    .product-name {
+        font-size: 13px;
+    }
+    
+    .product-details {
+        font-size: 10px !important;
+    }
 }
 
 .status {
@@ -282,30 +327,31 @@ input:focus, textarea:focus, select:focus {
 .order-screen {
     flex: 1;
     background: white;
-    padding: 20px;
+    padding: 10px;
     animation: slideInFromRight 0.4s ease-out;
 }
 
 .department-group {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 20px;
+    padding: 12px;
     background: #f8f9fa;
-    border-radius: 12px;
+    border-radius: 9px;
 }
 
 .department-header {
     background: #34495e;
     color: white;
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin: -20px -20px 15px -20px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: -12px -12px 10px -12px;
     font-weight: 600;
+    font-size: 13px;
 }
 
 .product-item {
     display: flex;
     align-items: center;
-    padding: 15px 0;
+    padding: 8px 0;
     border-bottom: 1px solid #ecf0f1;
 }
 
@@ -315,28 +361,48 @@ input:focus, textarea:focus, select:focus {
 
 .product-info {
     flex: 1;
+    min-width: 0; /* Для правильного обрезания длинного текста */
 }
 
 .product-name {
     font-weight: 600;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
+    font-size: 13px;
+    line-height: 1.2;
 }
 
 .product-unit {
     color: #7f8c8d;
-    font-size: 14px;
+    font-size: 10px;
+}
+
+.product-details {
+    font-size: 10px !important;
+    color: #7f8c8d !important;
+    line-height: 1.2;
 }
 
 .quantity-input {
-    width: 80px;
-    margin-right: 10px;
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
 }
 
 .comment-input {
-    flex: 1;
-    margin-left: 10px;
+     flex: 1;
+    min-width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 10px;
 }
-
+/* Уменьшаем отступы между группами при прокрутке */
+.department-group + .department-group {
+    margin-top: 15px;
+}
 /* История заявок */
 .history-screen {
     flex: 1;
@@ -895,13 +961,13 @@ input:focus, textarea:focus, select:focus {
 .grouping-toggle-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
-    padding: 15px;
+    margin-bottom: 10px;
+    padding: 8px;
     background: #ffffff;
-    border-radius: 12px;
-    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .grouping-toggle-container:hover {
@@ -921,14 +987,14 @@ input:focus, textarea:focus, select:focus {
 .toggle-label {
     display: flex;
     align-items: center;
-    width: 220px;
-    height: 44px;
+    width: 200px;
+    height: 36px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 25px;
+    border-radius: 20px;
     position: relative;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     border: 1px solid #dee2e6;
     overflow: hidden;
 }
@@ -938,14 +1004,14 @@ input:focus, textarea:focus, select:focus {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 106px;
-    height: 40px;
+    width: 96px;
+    height: 32px;
     background: transparent;
     border: 2px solid #000000;
-    border-radius: 20px;
+    border-radius: 18px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Текст всегда видимый */
@@ -954,27 +1020,27 @@ input:focus, textarea:focus, select:focus {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 13px;
+    font-size: 10px;
     font-weight: 600;
     transition: all 0.3s ease;
     z-index: 1;
     text-align: center;
-    width: 100px;
-    padding: 8px 0;
+    width: 85px;
+    padding: 5px 0;
     color: #2c3e50;
 }
 
 .toggle-text-supplier {
-    left: 10px;
+    left: 7px;
 }
 
 .toggle-text-tags {
-    right: 10px;
+    right: 7px;
 }
 
 /* Состояния при переключении */
 .toggle-checkbox:checked + .toggle-label .toggle-handle {
-    transform: translateX(108px);
+    transform: translateX(90px);
     border-color: #000000;
 }
 
@@ -1065,6 +1131,7 @@ input:focus, textarea:focus, select:focus {
     content: "";
     font-size: 12px;
 }
+
 
 
 
