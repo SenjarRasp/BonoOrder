@@ -1331,5 +1331,47 @@ input:focus, textarea:focus, select:focus {
     font-style: italic;
 }
 
+/* Стили для чекбоксов в списках */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #ecf0f1;
+}
 
+.checkbox-item:last-child {
+    border-bottom: none;
+}
 
+.checkbox-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    flex: 1;
+}
+
+/* Стили для табличных форм */
+.template-item, .user-item {
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.template-item:hover, .user-item:hover {
+    background: #e9ecef;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .template-item > div,
+    .user-item > div {
+        grid-template-columns: 1fr !important;
+        gap: 5px !important;
+    }
+    
+    .template-item select[multiple],
+    .user-item select[multiple] {
+        height: 60px !important;
+    }
+}
