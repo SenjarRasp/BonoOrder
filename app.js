@@ -15,6 +15,10 @@ class RestaurantOrderApp {
         this.currentOrderData = {}; // Для хранения введённых данных
         this.isAdmin = false;
         this.isSuperAdmin = false;
+
+        // Новые свойства для хранения данных
+        this.allTags = [];
+        this.allTemplates = [];
         
         this.init();
     }
@@ -2108,6 +2112,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
