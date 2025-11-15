@@ -102,8 +102,8 @@ input:focus, textarea:focus, select:focus {
     }
     
     .quantity-input {
-        width: 50px;
-        padding: 5px 6px;
+        width: 30px;
+        padding: 3px 4px;
         font-size: 13px;
     }
     
@@ -1131,6 +1131,7 @@ input:focus, textarea:focus, select:focus {
     content: "";
     font-size: 12px;
 }
+
 
 
 
