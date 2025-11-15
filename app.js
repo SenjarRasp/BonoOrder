@@ -646,7 +646,7 @@ class RestaurantOrderApp {
         return `
             <div class="template-screen screen-transition">
                 <header class="header">
-                    <button class="back-btn" onclick="app.handleBackButton()">← Назад</button>
+                    <button class="back-btn" onclick="app.handleBackButton()">◀️ Назад</button>
                     <h1>Выбор шаблона</h1>
                 </header>
                 ${templatesHtml}
@@ -875,7 +875,7 @@ class RestaurantOrderApp {
         return `
             <div class="history-screen screen-transition">
                 <header class="header">
-                    <button class="back-btn" onclick="app.renderScreen('main')">← Назад</button>
+                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
                     <h1>История заявок</h1>
                 </header>
                 
@@ -927,6 +927,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
