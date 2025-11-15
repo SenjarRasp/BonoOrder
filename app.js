@@ -13,6 +13,7 @@ class RestaurantOrderApp {
         this.currentProducts = [];
         this.currentTemplateName = '';
         this.currentOrderData = {}; // Для хранения введённых данных
+        this.isAdmin = false;
         
         this.init();
     }
@@ -215,8 +216,11 @@ class RestaurantOrderApp {
                 department: loginResult.user.department,
                 position: loginResult.user.position,
                 templates: loginResult.user.templates
+                isAdmin: loginResult.user.isAdmin || false
             };
-            
+
+            this.isAdmin = this.currentUser.isAdmin;
+        
             this.showSuccess(`Добро пожаловать, ${this.currentUser.name}!`);
             setTimeout(() => {
                 this.renderScreen('main');
@@ -502,6 +506,12 @@ class RestaurantOrderApp {
                 case 'template_selection':
                     screenHTML = this.renderTemplateSelectionScreen();
                     break;
+                case 'add_product':
+                    screenHTML = this.renderAddProductScreen(data);
+                    break;
+                case 'add_supplier':
+                    screenHTML = this.renderAddSupplierScreen();
+                    break;
                 case 'order_creation':
                     screenHTML = this.renderOrderCreationScreen(data);
                     break;
@@ -525,7 +535,104 @@ class RestaurantOrderApp {
             
         }, 300);
     }
-
+    // Рендер экрана добавления товара
+    renderAddProductScreen(data) {
+        const tagsOptions = data.tags ? data.tags.map(tag => 
+            `<option value="${tag}">${tag}</option>`
+        ).join('') : '';
+    
+        const suppliersOptions = data.suppliers ? data.suppliers.map(supplier => 
+            `<option value="${supplier}">${supplier}</option>`
+        ).join('') : '';
+    
+        return `
+            <div class="main-screen screen-transition">
+                <header class="header">
+                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
+                    <h1>Добавить товар</h1>
+                </header>
+                
+                <form id="addProductForm" class="form">
+                    <div class="input-group">
+                        <label>Название товара *</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Теги *</label>
+                        <select id="productTags" multiple required style="height: 100px;">
+                            ${tagsOptions}
+                        </select>
+                        <small>Удерживайте Ctrl для выбора нескольких тегов</small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Единица измерения *</label>
+                        <input type="text" id="productUnit" required value="шт">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Срок годности (дни)</label>
+                        <input type="number" id="productShelfLife" min="0">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Минимальный запас *</label>
+                        <input type="number" id="productMinStock" required min="0" value="1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Поставщики *</label>
+                        <select id="productSuppliers" multiple required style="height: 100px;">
+                            ${suppliersOptions}
+                        </select>
+                        <small>Удерживайте Ctrl для выбора нескольких поставщиков</small>
+                    </div>
+                    
+                    <button type="submit" class="btn primary" style="width: 100%;">
+                        ➕ Добавить товар
+                    </button>
+                </form>
+                
+                <div id="productStatus" class="status"></div>
+            </div>
+        `;
+    }
+    
+    // Рендер экрана добавления поставщика
+    renderAddSupplierScreen() {
+        return `
+            <div class="main-screen screen-transition">
+                <header class="header">
+                    <button class="back-btn" onclick="app.renderScreen('main')">◀️ Назад</button>
+                    <h1>Добавить поставщика</h1>
+                </header>
+                
+                <form id="addSupplierForm" class="form">
+                    <div class="input-group">
+                        <label>Название поставщика *</label>
+                        <input type="text" id="supplierName" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Telegram ID</label>
+                        <input type="text" id="supplierTgId">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Телефон *</label>
+                        <input type="tel" id="supplierPhone" required>
+                    </div>
+                    
+                    <button type="submit" class="btn primary" style="width: 100%;">
+                        🏢 Добавить поставщика
+                    </button>
+                </form>
+                
+                <div id="supplierStatus" class="status"></div>
+            </div>
+        `;
+    }
     renderLoginScreen() {
         return `
             <div class="login-screen">
@@ -552,12 +659,31 @@ class RestaurantOrderApp {
 
     // Рендер главного экрана
     renderMainScreen() {
+        const adminActions = this.isAdmin ? `
+            <div class="action-card" onclick="app.handleMainAction('add_product')">
+                <div class="action-content">
+                    <div class="action-icon">➕</div>
+                    <h3>Добавить товар</h3>
+                    <p>Добавить новый товар в базу</p>
+                </div>
+            </div>
+            
+            <div class="action-card" onclick="app.handleMainAction('add_supplier')">
+                <div class="action-content">
+                    <div class="action-icon">🏢</div>
+                    <h3>Добавить поставщика</h3>
+                    <p>Добавить нового поставщика</p>
+                </div>
+            </div>
+        ` : '';
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
                     <h1>Главная</h1>
                     <div class="user-info">
                         ${this.currentUser.department} • ${this.currentUser.position}
+                        ${this.isAdmin ? ' • 👑' : ''}
                     </div>
                 </header>
                 
@@ -577,6 +703,8 @@ class RestaurantOrderApp {
                             <p>Посмотреть отправленные</p>
                         </div>
                     </div>
+                    
+                    ${adminActions}
                     
                     <div class="action-card" onclick="app.handleMainAction('logout')">
                         <div class="action-content">
@@ -609,6 +737,14 @@ class RestaurantOrderApp {
                     
                 case 'history':
                     this.loadOrderHistory();
+                    break;
+                
+                case 'add_product':
+                    this.showAddProductScreen();
+                    break;
+                
+                case 'add_supplier':
+                    this.showAddSupplierScreen();
                     break;
                     
                 case 'logout':
@@ -662,6 +798,54 @@ class RestaurantOrderApp {
         `;
     }
 
+    // Показать экран добавления товара
+    async showAddProductScreen() {
+        try {
+            this.showLoading('Загрузка данных...');
+            const data = await this.apiCall('get_product_form_data');
+            this.hideLoading();
+            this.renderScreen('add_product', data);
+        } catch (error) {
+            this.hideLoading();
+            this.showNotification('error', 'Ошибка загрузки: ' + error.message);
+        }
+    }
+    
+    // Показать экран добавления поставщика
+    showAddSupplierScreen() {
+        this.renderScreen('add_supplier');
+    }
+    
+    // Добавить товар
+    async addProduct(productData) {
+        try {
+            this.showLoading('Добавление товара...');
+            const result = await this.apiCall('add_product', productData);
+            this.showSuccess('Товар успешно добавлен!');
+            setTimeout(() => {
+                this.renderScreen('main');
+            }, 2000);
+        } catch (error) {
+            this.hideLoading();
+            this.showNotification('error', 'Ошибка добавления: ' + error.message);
+        }
+    }
+    
+    // Добавить поставщика
+    async addSupplier(supplierData) {
+        try {
+            this.showLoading('Добавление поставщика...');
+            const result = await this.apiCall('add_supplier', supplierData);
+            this.showSuccess('Поставщик успешно добавлен!');
+            setTimeout(() => {
+                this.renderScreen('main');
+            }, 2000);
+        } catch (error) {
+            this.hideLoading();
+            this.showNotification('error', 'Ошибка добавления: ' + error.message);
+        }
+    }
+    
     // Обработчик выбора шаблона
     handleTemplateSelect(templateName, cardElement) {
         // Анимация нажатия
@@ -1066,7 +1250,7 @@ class RestaurantOrderApp {
     }
 
     // Настройка обработчиков событий
-    setupEventListeners() {
+   setupEventListeners() {
         document.addEventListener('submit', (e) => {
             if (e.target.id === 'loginForm') {
                 e.preventDefault();
@@ -1074,8 +1258,63 @@ class RestaurantOrderApp {
                 const password = document.getElementById('password').value;
                 this.handleLogin(phone, password);
             }
+            
+            if (e.target.id === 'addProductForm') {
+                e.preventDefault();
+                this.handleAddProduct();
+            }
+            
+            if (e.target.id === 'addSupplierForm') {
+                e.preventDefault();
+                this.handleAddSupplier();
+            }
         });
     }
+
+    // Обработчик добавления товара
+    handleAddProduct() {
+        const name = document.getElementById('productName').value;
+        const tagsSelect = document.getElementById('productTags');
+        const tags = Array.from(tagsSelect.selectedOptions).map(opt => opt.value).join(',');
+        const unit = document.getElementById('productUnit').value;
+        const shelfLife = document.getElementById('productShelfLife').value;
+        const minStock = document.getElementById('productMinStock').value;
+        const suppliersSelect = document.getElementById('productSuppliers');
+        const suppliers = Array.from(suppliersSelect.selectedOptions).map(opt => opt.value).join(',');
+    
+        if (!name || !tags || !unit || !minStock || !suppliers) {
+            this.showNotification('error', 'Заполните все обязательные поля');
+            return;
+        }
+    
+        this.addProduct({
+            name,
+            product_tags: tags,
+            unit,
+            shelf_life: shelfLife,
+            min_stock: minStock,
+            suppliers
+        });
+    }
+    
+    // Обработчик добавления поставщика
+    handleAddSupplier() {
+        const name = document.getElementById('supplierName').value;
+        const tgId = document.getElementById('supplierTgId').value;
+        const phone = document.getElementById('supplierPhone').value;
+    
+        if (!name || !phone) {
+            this.showNotification('error', 'Заполните все обязательные поля');
+            return;
+        }
+    
+        this.addSupplier({
+            name,
+            tg_id: tgId,
+            phone
+        });
+    }
+    
     initToggleSwitch() {
         const toggle = document.getElementById('groupingToggle');
         if (toggle) {
@@ -1101,6 +1340,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
