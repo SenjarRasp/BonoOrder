@@ -20,7 +20,30 @@ body {
     position: relative;
     overflow: hidden;
 }
+/* Стили для форм добавления */
+.form {
+    max-width: 500px;
+    margin: 0 auto;
+}
 
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.input-group select[multiple] {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.input-group small {
+    display: block;
+    margin-top: 5px;
+    color: #7f8c8d;
+    font-size: 12px;
+}
 /* Общие стили */
 .btn {
     padding: 12px 24px;
@@ -1259,3 +1282,4 @@ input:focus, textarea:focus, select:focus {
     padding: 30px;
     font-style: italic;
 }
+
