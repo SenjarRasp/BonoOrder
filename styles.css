@@ -906,33 +906,22 @@ input:focus, textarea:focus, select:focus {
     animation: spin 1s linear infinite;
 }
 
-/* Стили для стеклянного toggle switch */
+/* Стили для toggle switch */
 .grouping-toggle-container {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.1),
-        inset 0 1px 1px rgba(255, 255, 255, 0.6);
-    position: relative;
-    overflow: hidden;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.grouping-toggle-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
-    border-radius: 16px;
-    z-index: -1;
+.grouping-toggle-container:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
 }
 
 .toggle-switch {
@@ -948,59 +937,31 @@ input:focus, textarea:focus, select:focus {
     display: flex;
     align-items: center;
     width: 220px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
+    height: 44px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 25px;
     position: relative;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
-        inset 0 2px 4px rgba(255, 255, 255, 0.3),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-        0 4px 20px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #dee2e6;
     overflow: hidden;
-}
-
-.toggle-label::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
-    border-radius: 24px;
-    z-index: 1;
 }
 
 .toggle-handle {
     position: absolute;
     top: 4px;
     left: 4px;
-    width: 104px;
-    height: 40px;
-    background: linear-gradient(135deg, #000000 0%, #2d2e2d 100%);
+    width: 100px;
+    height: 36px;
+    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
     border-radius: 20px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 3;
-    box-shadow: 
-        0 4px 15px rgba(0, 0, 0, 0.3),
-        0 2px 4px rgba(255, 255, 255, 0.2),
-        inset 0 1px 2px rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.toggle-handle::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
-    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .toggle-text-supplier,
@@ -1010,142 +971,125 @@ input:focus, textarea:focus, select:focus {
     transform: translateY(-50%);
     font-size: 13px;
     font-weight: 600;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
+    transition: all 0.3s ease;
+    z-index: 1;
     text-align: center;
-    width: 104px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    letter-spacing: 0.5px;
+    width: 100px;
+    padding: 4px 8px;
+    border-radius: 15px;
 }
 
 .toggle-text-supplier {
-    left: 12px;
-    color: rgba(255, 255, 255, 0.9);
+    left: 8px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.8);
 }
 
 .toggle-text-tags {
-    right: 12px;
-    color: rgba(255, 255, 255, 0.7);
+    right: 8px;
+    color: #2c3e50;
+    background: rgba(255, 255, 255, 0.9);
 }
 
-/* Состояние когда выбраны теги */
+/* Состояния при переключении */
 .toggle-checkbox:checked + .toggle-label .toggle-handle {
-    transform: translateX(108px);
-    background: linear-gradient(135deg, #000000 0%, #2d2e2d 100%);
-    box-shadow: 
-        0 4px 15px rgba(0, 0, 0, 0.3),
-        0 2px 4px rgba(255, 255, 255, 0.2),
-        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    transform: translateX(112px);
+    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
 }
 
 .toggle-checkbox:checked + .toggle-label .toggle-text-supplier {
-    color: rgba(255, 255, 255, 0.7);
-    transform: translateY(-50%) scale(0.95);
+    color: #2c3e50;
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .toggle-checkbox:checked + .toggle-label .toggle-text-tags {
-    color: rgba(255, 255, 255, 0.9);
-    transform: translateY(-50%) scale(1.05);
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.8);
 }
 
-/* Состояние когда выбраны поставщики */
-.toggle-checkbox:not(:checked) + .toggle-label .toggle-text-supplier {
-    color: rgba(255, 255, 255, 0.9);
-    transform: translateY(-50%) scale(1.05);
-}
-
-.toggle-checkbox:not(:checked) + .toggle-label .toggle-text-tags {
-    color: rgba(255, 255, 255, 0.7);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Анимации и эффекты при взаимодействии */
-.toggle-label:hover {
-    box-shadow: 
-        inset 0 2px 4px rgba(255, 255, 255, 0.4),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-        0 6px 25px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
+/* Анимация при наведении */
+.toggle-label:hover .toggle-handle {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .toggle-label:active .toggle-handle {
-    width: 110px;
-    box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.4),
-        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
 }
 
 .toggle-checkbox:checked + .toggle-label:active .toggle-handle {
-    transform: translateX(102px);
+    transform: translateX(112px) scale(0.95);
 }
 
-/* Эффект свечения при переключении */
-.toggle-checkbox:checked + .toggle-label {
-    box-shadow: 
-        inset 0 2px 4px rgba(255, 255, 255, 0.3),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-        0 4px 20px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(0, 0, 0, 0.1);
+/* Индикатор активного состояния */
+.toggle-label::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 26px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.toggle-checkbox:checked + .toggle-label::before {
+    opacity: 1;
 }
 
 /* Адаптивность для мобильных устройств */
 @media (max-width: 480px) {
     .grouping-toggle-container {
         padding: 12px;
-        margin: 0 10px 20px 10px;
-        border-radius: 14px;
+        margin-bottom: 15px;
     }
     
     .toggle-label {
         width: 200px;
-        height: 44px;
-        border-radius: 22px;
+        height: 40px;
     }
     
     .toggle-handle {
-        width: 92px;
-        height: 36px;
-        border-radius: 18px;
+        width: 90px;
+        height: 32px;
     }
     
     .toggle-checkbox:checked + .toggle-label .toggle-handle {
-        transform: translateX(100px);
+        transform: translateX(102px);
     }
     
     .toggle-text-supplier,
     .toggle-text-tags {
-        width: 92px;
+        width: 90px;
         font-size: 12px;
-    }
-    
-    .toggle-checkbox:checked + .toggle-label:active .toggle-handle {
-        transform: translateX(94px);
+        padding: 3px 6px;
     }
 }
 
-/* Улучшенные стили для контейнера на разных экранах */
-@media (max-width: 768px) {
-    .grouping-toggle-container {
-        margin: 0 15px 20px 15px;
-    }
-}
-
-/* Эффект параллакса для глубины */
-.toggle-label::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    transform: translate(-50%, -50%);
-    border-radius: 24px;
+/* Улучшенная видимость для контента под toggle switch */
+.order-screen {
+    position: relative;
     z-index: 1;
 }
 
-.toggle-label:hover::after {
-    opacity: 1;
+.department-group {
+    position: relative;
+    z-index: 2;
+}
+
+/* Дополнительные стили для лучшей читаемости */
+.product-item {
+    background: #ffffff;
+    margin: 8px 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.product-item:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
 }
