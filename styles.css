@@ -130,7 +130,7 @@ input:focus, textarea:focus, select:focus {
 
 .login-screen .form {
     width: 100%;
-    max-width: 300px;
+    max-width: 200px;
 }
 
 /* Главный экран */
@@ -1065,6 +1065,7 @@ input:focus, textarea:focus, select:focus {
     content: "";
     font-size: 12px;
 }
+
 
 
 
