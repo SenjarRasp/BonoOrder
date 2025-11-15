@@ -353,6 +353,7 @@ input:focus, textarea:focus, select:focus {
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid #ecf0f1;
+    gap: 6px;
 }
 
 .product-item:last-child {
@@ -369,6 +370,9 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 2px;
     font-size: 13px;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .product-unit {
@@ -383,21 +387,23 @@ input:focus, textarea:focus, select:focus {
 }
 
 .quantity-input {
-    width: 60px;
-    padding: 6px 8px;
+    width: 40px;
+    padding: 6px 4px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 13px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .comment-input {
-     flex: 1;
+    width: 100px; /* Фиксированная узкая ширина */
     min-width: 80px;
     padding: 6px 8px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 10px;
+    flex-shrink: 0;
 }
 /* Уменьшаем отступы между группами при прокрутке */
 .department-group + .department-group {
@@ -1131,6 +1137,7 @@ input:focus, textarea:focus, select:focus {
     content: "";
     font-size: 12px;
 }
+
 
 
 
