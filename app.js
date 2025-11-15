@@ -514,6 +514,12 @@ class RestaurantOrderApp {
             if (screenName === 'order_creation') {
                 this.initToggleSwitch();
             }
+            // Инициализируем модальное окно если это экран истории
+            if (screenName === 'order_history') {
+                setTimeout(() => {
+                    this.setupModalClose();
+                }, 100);
+            }
             
         }, 300);
     }
@@ -842,20 +848,25 @@ class RestaurantOrderApp {
                 </div>
             `;
         } else {
-            // ИСПРАВЛЕНИЕ: убрали неиспользуемый параметр index
             this.ordersHistory.forEach((order) => {
                 console.log('Rendering order:', order);
                 
                 // Безопасное форматирование даты
                 let orderDate = 'Дата неизвестна';
+                let orderTime = '';
                 try {
-                    orderDate = new Date(order.date).toLocaleDateString('ru-RU');
+                    const date = new Date(order.date);
+                    orderDate = date.toLocaleDateString('ru-RU');
+                    orderTime = date.toLocaleTimeString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
                 } catch (e) {
                     console.log('Date parsing error:', e);
                 }
                 
                 ordersHtml += `
-                    <div class="order-item ${order.status || 'sent'}">
+                    <div class="order-item ${order.status || 'sent'}" onclick="app.showOrderDetails('${order.order_id}')">
                         <div class="order-header">
                             <span class="order-id">${order.order_id || 'Без номера'}</span>
                             <span class="order-date">${orderDate}</span>
@@ -864,6 +875,7 @@ class RestaurantOrderApp {
                             <span>${order.template || 'Без шаблона'}</span>
                             <span>${order.items_count || 0} товаров</span>
                         </div>
+                        <div class="order-time">${orderTime}</div>
                         <div style="margin-top: 8px; font-size: 12px; color: #27ae60;">
                             ✅ Успешно отправлена
                         </div>
@@ -882,10 +894,170 @@ class RestaurantOrderApp {
                 <div class="orders-list">
                     ${ordersHtml}
                 </div>
+                
+                <!-- Модальное окно для деталей заявки -->
+                <div id="orderDetailsModal" class="modal-overlay" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="modalTitle">Детали заявки</h2>
+                            <button class="close-btn" onclick="app.hideOrderDetails()">×</button>
+                        </div>
+                        <div id="modalContent">
+                            <!-- Контент будет заполнен динамически -->
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
 
+    // Показать детали заявки
+    showOrderDetails(orderId) {
+        console.log('Showing details for order:', orderId);
+        
+        // Находим заявку в истории
+        const order = this.ordersHistory.find(o => o.order_id === orderId);
+        if (!order) {
+            this.showNotification('error', 'Заявка не найдена');
+            return;
+        }
+        
+        // Форматируем дату
+        let orderDate = 'Дата неизвестна';
+        let orderTime = '';
+        try {
+            const date = new Date(order.date);
+            orderDate = date.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            orderTime = date.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        } catch (e) {
+            console.log('Date parsing error:', e);
+        }
+        
+        // Получаем детали товаров
+        let itemsHtml = '';
+        let totalItems = 0;
+        
+        try {
+            // Предполагаем, что items хранится в order.items
+            const items = order.items || [];
+            totalItems = items.length;
+            
+            if (items.length === 0) {
+                itemsHtml = `
+                    <div class="no-items">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📦</div>
+                        <p>Информация о товарах недоступна</p>
+                    </div>
+                `;
+            } else {
+                items.forEach((item, index) => {
+                    itemsHtml += `
+                        <div class="order-detail-item">
+                            <div class="order-detail-info">
+                                <div class="order-detail-name">${item.product_name || 'Неизвестный товар'}</div>
+                                <div class="order-detail-meta">
+                                    ${item.supplier || 'Поставщик не указан'} • ${item.unit || 'шт'}
+                                </div>
+                                ${item.comment ? `<div class="order-detail-comment">💬 ${item.comment}</div>` : ''}
+                            </div>
+                            <div class="order-detail-quantity">
+                                ${item.quantity || 0} ${item.unit || 'шт'}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error('Error parsing order items:', error);
+            itemsHtml = `
+                <div class="no-items">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
+                    <p>Ошибка загрузки деталей заявки</p>
+                </div>
+            `;
+        }
+        
+        // Создаем содержимое модального окна
+        const modalContent = `
+            <div class="order-summary">
+                <div class="order-summary-item">
+                    <span>Номер заявки:</span>
+                    <span><strong>${order.order_id}</strong></span>
+                </div>
+                <div class="order-summary-item">
+                    <span>Шаблон:</span>
+                    <span>${order.template || 'Не указан'}</span>
+                </div>
+                <div class="order-summary-item">
+                    <span>Создал:</span>
+                    <span>${order.user_name || 'Неизвестно'}</span>
+                </div>
+                <div class="order-summary-item">
+                    <span>Дата:</span>
+                    <span>${orderDate}</span>
+                </div>
+                <div class="order-summary-item">
+                    <span>Время:</span>
+                    <span>${orderTime}</span>
+                </div>
+                <div class="order-summary-total">
+                    <span>Всего товаров:</span>
+                    <span><strong>${totalItems}</strong></span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">Товары в заявке:</h3>
+                <div class="order-items-list">
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+        
+        // Показываем модальное окно
+        const modal = document.getElementById('orderDetailsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContentDiv = document.getElementById('modalContent');
+        
+        if (modal && modalTitle && modalContentDiv) {
+            modalTitle.textContent = `Заявка ${order.order_id}`;
+            modalContentDiv.innerHTML = modalContent;
+            modal.style.display = 'flex';
+            
+            // Блокируем прокрутку основного контента
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    // Скрыть модальное окно
+    hideOrderDetails() {
+        const modal = document.getElementById('orderDetailsModal');
+        if (modal) {
+            modal.style.display = 'none';
+            // Восстанавливаем прокрутку
+            document.body.style.overflow = 'auto';
+        }
+    }
+    
+    // Закрытие модального окна по клику на overlay
+    setupModalClose() {
+        const modal = document.getElementById('orderDetailsModal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideOrderDetails();
+                }
+            });
+        }
+    }
+    
     // Показать уведомление (без изменений)
     showNotification(type, message) {
         // ... существующий код без изменений
@@ -927,6 +1099,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
