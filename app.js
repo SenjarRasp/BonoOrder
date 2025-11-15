@@ -560,15 +560,21 @@ class RestaurantOrderApp {
                     
                     <div class="input-group">
                         <label>Теги *</label>
-                        <select id="productTags" multiple required style="height: 100px;">
+                        <select id="productTags" required>
+                            <option value="">-- Выберите тег --</option>
                             ${tagsOptions}
+                            <option value="_custom">-- Добавить свой тег --</option>
                         </select>
-                        <small>Удерживайте Ctrl для выбора нескольких тегов</small>
                     </div>
                     
                     <div class="input-group">
                         <label>Единица измерения *</label>
                         <input type="text" id="productUnit" required value="шт">
+                    </div>
+
+                    <div class="input-group" id="customTagGroup" style="display: none;">
+                        <label>Новый тег *</label>
+                        <input type="text" id="customTag" placeholder="Введите новый тег">
                     </div>
                     
                     <div class="input-group">
@@ -582,11 +588,11 @@ class RestaurantOrderApp {
                     </div>
                     
                     <div class="input-group">
-                        <label>Поставщики *</label>
-                        <select id="productSuppliers" multiple required style="height: 100px;">
+                        <label>Поставщик *</label>
+                        <select id="productSupplier" required>
+                            <option value="">-- Выберите поставщика --</option>
                             ${suppliersOptions}
                         </select>
-                        <small>Удерживайте Ctrl для выбора нескольких поставщиков</small>
                     </div>
                     
                     <button type="submit" class="btn primary" style="width: 100%;">
@@ -805,6 +811,16 @@ class RestaurantOrderApp {
             const data = await this.apiCall('get_product_form_data');
             this.hideLoading();
             this.renderScreen('add_product', data);
+            
+            // Добавляем обработчики после рендера
+            setTimeout(() => {
+                const tagsSelect = document.getElementById('productTags');
+                if (tagsSelect) {
+                    tagsSelect.addEventListener('change', (e) => {
+                        this.handleTagSelection(e.target.value);
+                    });
+                }
+            }, 100);
         } catch (error) {
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки: ' + error.message);
@@ -1250,7 +1266,7 @@ class RestaurantOrderApp {
     }
 
     // Настройка обработчиков событий
-   setupEventListeners() {
+    setupEventListeners() {
         document.addEventListener('submit', (e) => {
             if (e.target.id === 'loginForm') {
                 e.preventDefault();
@@ -1269,31 +1285,68 @@ class RestaurantOrderApp {
                 this.handleAddSupplier();
             }
         });
+    
+        // Обработчик изменения выбора тега
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'productTags') {
+                this.handleTagSelection(e.target.value);
+            }
+        });
+    }
+    
+    // Обработчик выбора тега
+    handleTagSelection(selectedValue) {
+        const customTagGroup = document.getElementById('customTagGroup');
+        const customTagInput = document.getElementById('customTag');
+        
+        if (selectedValue === '_custom') {
+            customTagGroup.style.display = 'block';
+            customTagInput.required = true;
+        } else {
+            customTagGroup.style.display = 'none';
+            customTagInput.required = false;
+            customTagInput.value = '';
+        }
     }
 
     // Обработчик добавления товара
     handleAddProduct() {
         const name = document.getElementById('productName').value;
-        const tagsSelect = document.getElementById('productTags');
-        const tags = Array.from(tagsSelect.selectedOptions).map(opt => opt.value).join(',');
+        const selectedTag = document.getElementById('productTags').value;
+        const customTag = document.getElementById('customTag').value;
         const unit = document.getElementById('productUnit').value;
         const shelfLife = document.getElementById('productShelfLife').value;
         const minStock = document.getElementById('productMinStock').value;
-        const suppliersSelect = document.getElementById('productSuppliers');
-        const suppliers = Array.from(suppliersSelect.selectedOptions).map(opt => opt.value).join(',');
+        const supplier = document.getElementById('productSupplier').value;
     
-        if (!name || !tags || !unit || !minStock || !suppliers) {
+        // Определяем итоговый тег
+        let finalTag;
+        if (selectedTag === '_custom') {
+            if (!customTag) {
+                this.showNotification('error', 'Введите новый тег');
+                return;
+            }
+            finalTag = customTag;
+        } else {
+            if (!selectedTag) {
+                this.showNotification('error', 'Выберите тег');
+                return;
+            }
+            finalTag = selectedTag;
+        }
+    
+        if (!name || !unit || !minStock || !supplier) {
             this.showNotification('error', 'Заполните все обязательные поля');
             return;
         }
     
         this.addProduct({
             name,
-            product_tags: tags,
+            product_tags: finalTag,
             unit,
             shelf_life: shelfLife,
             min_stock: minStock,
-            suppliers
+            suppliers: supplier
         });
     }
     
