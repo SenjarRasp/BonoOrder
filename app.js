@@ -9,6 +9,9 @@ class RestaurantOrderApp {
         this.currentScreen = 'login';
         this.ordersHistory = [];
         this.availableTemplates = [];
+        this.currentGroupBy = 'supplier'; // 'supplier' или 'tags'
+        this.currentProducts = [];
+        this.currentTemplateName = '';
         
         this.init();
     }
@@ -18,7 +21,15 @@ class RestaurantOrderApp {
         this.setupEventListeners();
         this.hideLoading(); // Убедимся, что загрузка скрыта при старте
     }
-    
+    // Метод для изменения способа группировки
+    changeGroupBy(groupBy) {
+        this.currentGroupBy = groupBy;
+        // Перерисовываем экран с новым способом группировки
+        this.renderScreen('order_creation', {
+            templateName: this.currentTemplateName,
+            products: this.currentProducts
+        });
+    }
      // Показать анимацию загрузки
     showLoading(text = 'Загрузка...') {
         const overlay = document.getElementById('loadingOverlay');
@@ -189,14 +200,19 @@ class RestaurantOrderApp {
             });
             
             this.hideLoading();
-            this.enableUI(); // Разблокируем UI после загрузки
+            this.enableUI();
+            
+            // Сохраняем товары и название шаблона для перерисовки
+            this.currentProducts = result.products;
+            this.currentTemplateName = templateName;
+            
             this.renderScreen('order_creation', { 
                 templateName: templateName,
                 products: result.products 
             });
         } catch (error) {
             this.hideLoading();
-            this.enableUI(); // Разблокируем UI при ошибке
+            this.enableUI();
             this.showNotification('error', 'Ошибка загрузки товаров: ' + error.message);
         }
     }
@@ -601,46 +617,12 @@ class RestaurantOrderApp {
         
         let productsHtml = '';
         
-        // Группируем товары по поставщикам
-        const groupedBySupplier = {};
-        data.products.forEach(product => {
-            if (!groupedBySupplier[product.supplier]) {
-                groupedBySupplier[product.supplier] = [];
-            }
-            groupedBySupplier[product.supplier].push(product);
-        });
-        
-        Object.keys(groupedBySupplier).forEach(supplier => {
-            productsHtml += `
-                <div class="department-group">
-                    <div class="department-header">${supplier}</div>
-            `;
-            
-            groupedBySupplier[supplier].forEach(product => {
-                productsHtml += `
-                    <div class="product-item">
-                        <div class="product-info">
-                            <div class="product-name">${product.name}</div>
-                            <div class="product-unit">${product.unit}</div>
-                        </div>
-                        <input type="number" 
-                               class="quantity-input" 
-                               min="0" 
-                               value="0" 
-                               data-product-name="${product.name}"
-                               data-product-unit="${product.unit}"
-                               data-supplier="${supplier}"
-                               placeholder="0">
-                        <input type="text" 
-                               class="comment-input" 
-                               placeholder="Комментарий"
-                               data-product-name="${product.name}">
-                    </div>
-                `;
-            });
-            
-            productsHtml += `</div>`;
-        });
+        // Группируем товары в зависимости от выбранного способа
+        if (this.currentGroupBy === 'supplier') {
+            productsHtml = this.renderProductsBySupplier(data.products);
+        } else {
+            productsHtml = this.renderProductsByTags(data.products);
+        }
         
         return `
             <div class="order-screen screen-transition">
@@ -649,9 +631,31 @@ class RestaurantOrderApp {
                     <h1>${data.templateName}</h1>
                 </header>
                 
+                <!-- Переключатель способа группировки -->
+                <div class="grouping-selector" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Сортировка товаров:</label>
+                    <div style="display: flex; gap: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="groupBy" value="supplier" 
+                                   ${this.currentGroupBy === 'supplier' ? 'checked' : ''}
+                                   onchange="app.changeGroupBy('supplier')"
+                                   style="margin-right: 8px;">
+                            📦 По поставщикам
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="groupBy" value="tags" 
+                                   ${this.currentGroupBy === 'tags' ? 'checked' : ''}
+                                   onchange="app.changeGroupBy('tags')"
+                                   style="margin-right: 8px;">
+                            🏷️ По тегам
+                        </label>
+                    </div>
+                </div>
+                
                 ${productsHtml}
                 
-                <button class="btn primary" onclick="app.submitOrder('${data.templateName}')" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 18px;">
+                <button class="btn primary" onclick="app.submitOrder('${data.templateName}')" 
+                        style="width: 100%; margin-top: 20px; padding: 15px; font-size: 18px;">
                     📨 Отправить заявку
                 </button>
                 
@@ -659,8 +663,98 @@ class RestaurantOrderApp {
             </div>
         `;
     }
+    // Рендер товаров по поставщикам (существующая логика)
+    renderProductsBySupplier(products) {
+        const groupedBySupplier = {};
+        products.forEach(product => {
+            if (!groupedBySupplier[product.supplier]) {
+                groupedBySupplier[product.supplier] = [];
+            }
+            groupedBySupplier[product.supplier].push(product);
+        });
+        
+        let productsHtml = '';
+        Object.keys(groupedBySupplier).forEach(supplier => {
+            productsHtml += `
+                <div class="department-group">
+                    <div class="department-header">${supplier}</div>
+            `;
+            
+            groupedBySupplier[supplier].forEach(product => {
+                productsHtml += this.renderProductItem(product);
+            });
+            
+            productsHtml += `</div>`;
+        });
+        
+        return productsHtml;
+    }
 
-    // Рендер экрана истории заявок (остается без изменений)
+    // Метод для рендера товаров по тегам
+    renderProductsByTags(products) {
+        // Создаем объект для группировки по тегам
+        const groupedByTags = {};
+        
+        products.forEach(product => {
+            // Получаем теги из product_tags (предполагаем, что это строка с тегами через запятую)
+            const tags = product.product_tags ? 
+                product.product_tags.split(',').map(tag => tag.trim()).filter(tag => tag) : 
+                ['Без тега'];
+            
+            // Используем первый тег для группировки (по условию тег может быть только один)
+            const mainTag = tags[0];
+            
+            if (!groupedByTags[mainTag]) {
+                groupedByTags[mainTag] = [];
+            }
+            groupedByTags[mainTag].push(product);
+        });
+        
+        let productsHtml = '';
+        Object.keys(groupedByTags).sort().forEach(tag => {
+            productsHtml += `
+                <div class="department-group">
+                    <div class="department-header">
+                        🏷️ ${tag}
+                    </div>
+            `;
+            
+            groupedByTags[tag].forEach(product => {
+                productsHtml += this.renderProductItem(product);
+            });
+            
+            productsHtml += `</div>`;
+        });
+        
+        return productsHtml;
+    }
+     // Вынесенный метод рендера одного товара (для переиспользования)
+    renderProductItem(product) {
+        return `
+            <div class="product-item">
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-details" style="font-size: 12px; color: #7f8c8d;">
+                        ${product.unit} • ${product.supplier}
+                        ${product.shelf_life ? ` • 🕒 ${product.shelf_life}` : ''}
+                    </div>
+                </div>
+                <input type="number" 
+                       class="quantity-input" 
+                       min="0" 
+                       value="0" 
+                       data-product-name="${product.name}"
+                       data-product-unit="${product.unit}"
+                       data-supplier="${product.supplier}"
+                       placeholder="0">
+                <input type="text" 
+                       class="comment-input" 
+                       placeholder="Комментарий"
+                       data-product-name="${product.name}">
+            </div>
+        `;
+    }
+    // Рендер экрана истории заявок
     renderOrderHistoryScreen() {
         console.log('Rendering history screen, orders count:', this.ordersHistory.length);
         
@@ -748,4 +842,5 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
