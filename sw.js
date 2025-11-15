@@ -44,9 +44,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Для API запросов - всегда сеть
   if (event.request.url.includes('script.google.com')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+        event.respondWith(
+            fetch(event.request)
+                .catch(() => {
+                    // Обработка ошибок сети
+                    return new Response(JSON.stringify({
+                        status: 'error',
+                        message: 'Отсутствует подключение к интернету'
+                    }), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                })
+        );
+        return;
+    }
 
   // Для статических файлов - кэш сначала, потом сеть
   event.respondWith(
@@ -71,4 +82,5 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
 
