@@ -891,7 +891,7 @@ input:focus, textarea:focus, select:focus {
     cursor: not-allowed;
 }
 
-/* Обновленные стили для toggle switch */
+/* Обновленные стили для toggle switch с прозрачным центром */
 .grouping-toggle-container {
     display: flex;
     justify-content: center;
@@ -933,23 +933,22 @@ input:focus, textarea:focus, select:focus {
     overflow: hidden;
 }
 
+/* Toggle handle как рамка с прозрачным центром */
 .toggle-handle {
     position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 100px;
-    height: 36px;
-    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
+    top: 2px;
+    left: 2px;
+    width: 106px;
+    height: 40px;
+    background: transparent;
+    border: 2px solid #000000;
     border-radius: 20px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* Убираем фон у текста и делаем его всегда видимым */
+/* Текст всегда видимый */
 .toggle-text-supplier,
 .toggle-text-tags {
     position: absolute;
@@ -958,48 +957,44 @@ input:focus, textarea:focus, select:focus {
     font-size: 13px;
     font-weight: 600;
     transition: all 0.3s ease;
-    z-index: 3; /* Повышаем z-index чтобы текст был над handle */
+    z-index: 1;
     text-align: center;
     width: 100px;
-    padding: 4px 8px;
-    border-radius: 15px;
-    background: transparent !important; /* Убираем фон */
+    padding: 8px 0;
+    color: #2c3e50;
 }
 
 .toggle-text-supplier {
-    left: 8px;
-    color: #2c3e50; /* Всегда темный цвет */
+    left: 10px;
 }
 
 .toggle-text-tags {
-    right: 8px;
-    color: #2c3e50; /* Всегда темный цвет */
+    right: 10px;
 }
 
-/* Состояния при переключении - убираем изменение цвета текста */
+/* Состояния при переключении */
 .toggle-checkbox:checked + .toggle-label .toggle-handle {
-    transform: translateX(112px);
-    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
+    transform: translateX(108px);
+    border-color: #000000;
 }
 
-/* Убираем изменение цвета текста при переключении */
-.toggle-checkbox:checked + .toggle-label .toggle-text-supplier,
-.toggle-checkbox:checked + .toggle-label .toggle-text-tags {
-    color: #2c3e50; /* Оставляем темный цвет */
-    background: transparent !important; /* Убираем фон */
+/* Активное состояние фона */
+.toggle-checkbox:checked + .toggle-label::before {
+    opacity: 1;
 }
 
 /* Анимация при наведении */
 .toggle-label:hover .toggle-handle {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border-color: #2d3748;
 }
 
 .toggle-label:active .toggle-handle {
-    transform: scale(0.95);
+    transform: scale(0.98);
 }
 
 .toggle-checkbox:checked + .toggle-label:active .toggle-handle {
-    transform: translateX(112px) scale(0.95);
+    transform: translateX(108px) scale(0.98);
 }
 
 /* Индикатор активного состояния */
@@ -1034,18 +1029,39 @@ input:focus, textarea:focus, select:focus {
     }
     
     .toggle-handle {
-        width: 90px;
-        height: 32px;
+        width: 96px;
+        height: 36px;
+        top: 2px;
+        left: 2px;
     }
     
     .toggle-checkbox:checked + .toggle-label .toggle-handle {
-        transform: translateX(102px);
+        transform: translateX(98px);
     }
     
     .toggle-text-supplier,
     .toggle-text-tags {
         width: 90px;
         font-size: 12px;
-        padding: 3px 6px;
+        padding: 6px 0;
     }
+    
+    .toggle-text-supplier {
+        left: 8px;
+    }
+    
+    .toggle-text-tags {
+        right: 8px;
+    }
+}
+
+/* Дополнительные стили для лучшей читаемости */
+.toggle-text-supplier::before {
+    content: "📦 ";
+    font-size: 12px;
+}
+
+.toggle-text-tags::before {
+    content: "🏷️ ";
+    font-size: 12px;
 }
