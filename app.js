@@ -311,6 +311,9 @@ class RestaurantOrderApp {
                 items_count: items.length
             });
             
+            // Очищаем сохранённые данные после успешной отправки
+            this.currentOrderData = {};
+            
             this.showSuccess(`Заявка ${result.order_id} отправлена!`);
             this.enableUI(); // Разблокируем после успешной отправки
             
@@ -391,29 +394,32 @@ class RestaurantOrderApp {
     // Сбор данных из формы заявки
     collectOrderItems() {
         const items = [];
-        const quantityInputs = document.querySelectorAll('.quantity-input');
         
-        quantityInputs.forEach(input => {
-            const quantity = parseInt(input.value);
-            if (quantity > 0) {
-                const productName = input.dataset.productName;
-                const supplier = input.dataset.supplier;
-                const unit = input.dataset.productUnit; // Добавляем единицу измерения
-                const commentInput = document.querySelector(`.comment-input[data-product-name="${productName}"]`);
+        // Используем сохранённые данные вместо прямого чтения из DOM
+        Object.keys(this.currentOrderData).forEach(key => {
+            const [productName, supplier] = key.split('|');
+            const data = this.currentOrderData[key];
+            
+            if (data.quantity > 0) {
+                // Находим соответствующий продукт для получения unit
+                const product = this.currentProducts.find(p => 
+                    p.name === productName && p.supplier === supplier
+                );
                 
-                items.push({
-                    product_name: productName,
-                    quantity: quantity,
-                    unit: unit, // Добавляем единицу измерения
-                    supplier: supplier,
-                    comment: commentInput ? commentInput.value : ''
-                });
+                if (product) {
+                    items.push({
+                        product_name: productName,
+                        quantity: data.quantity,
+                        unit: product.unit,
+                        supplier: supplier,
+                        comment: data.comment || ''
+                    });
+                }
             }
         });
         
         return items;
     }
-
     // Загрузка истории заявок
     async loadOrderHistory() {
         try {
@@ -921,6 +927,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
