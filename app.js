@@ -18,7 +18,7 @@ class RestaurantOrderApp {
         this.setupEventListeners();
         this.hideLoading(); // Убедимся, что загрузка скрыта при старте
     }
-
+    
      // Показать анимацию загрузки
     showLoading(text = 'Загрузка...') {
         const overlay = document.getElementById('loadingOverlay');
@@ -36,8 +36,25 @@ class RestaurantOrderApp {
         if (overlay) {
             overlay.classList.remove('active');
         }
+        this.enableUI(); // Всегда разблокируем UI при скрытии загрузки
     }
 
+    // Блокировка всех интерактивных элементов
+    disableUI() {
+        const interactiveElements = document.querySelectorAll('.action-card, .template-card, .btn, .back-btn');
+        interactiveElements.forEach(element => {
+            element.classList.add('disabled', 'loading');
+        });
+    }
+
+    // Разблокировка всех интерактивных элементов
+    enableUI() {
+        const interactiveElements = document.querySelectorAll('.action-card, .template-card, .btn, .back-btn');
+        interactiveElements.forEach(element => {
+            element.classList.remove('disabled', 'loading');
+        });
+    }
+    
     // Показать успешную анимацию
     showSuccess(message = 'Успешно!') {
         this.showLoading(message);
@@ -153,9 +170,11 @@ class RestaurantOrderApp {
             
             this.availableTemplates = result.templates;
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI после загрузки
             this.renderScreen('template_selection');
         } catch (error) {
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI при ошибке
             this.showNotification('error', 'Ошибка загрузки шаблонов: ' + error.message);
         }
     }
@@ -170,12 +189,14 @@ class RestaurantOrderApp {
             });
             
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI после загрузки
             this.renderScreen('order_creation', { 
                 templateName: templateName,
                 products: result.products 
             });
         } catch (error) {
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI при ошибке
             this.showNotification('error', 'Ошибка загрузки товаров: ' + error.message);
         }
     }
@@ -189,8 +210,10 @@ class RestaurantOrderApp {
         }
         
         try {
+            this.disableUI(); // Блокируем UI перед отправкой
             const items = this.collectOrderItems();
             if (items.length === 0) {
+                this.enableUI(); // Разблокируем если нет товаров
                 this.showNotification('error', 'Добавьте хотя бы один товар в заявку');
                 return;
             }
@@ -216,6 +239,7 @@ class RestaurantOrderApp {
             });
             
             this.showSuccess(`Заявка ${result.order_id} отправлена!`);
+            this.enableUI(); // Разблокируем после успешной отправки
             
             setTimeout(() => {
                 this.renderScreen('main');
@@ -223,6 +247,7 @@ class RestaurantOrderApp {
             
         } catch (error) {
             this.hideLoading();
+            this.enableUI(); // Разблокируем при ошибке
             this.showNotification('error', 'Ошибка отправки: ' + error.message);
         }
     }
@@ -319,13 +344,15 @@ class RestaurantOrderApp {
     // Загрузка истории заявок
     async loadOrderHistory() {
         try {
-                 // Защита от слишком частых вызовов
+            
+            // Защита от слишком частых вызовов
             if (this._loadingHistory) {
                 console.log('History already loading, skipping...');
                 return;
             }
             this._loadingHistory = true;
             
+            this.disableUI(); // Блокируем UI перед загрузкой   
             console.log('=== LOAD ORDER HISTORY CLIENT ===');
             console.log('Current user phone:', this.currentUser.phone);
             
@@ -351,11 +378,13 @@ class RestaurantOrderApp {
             }
             
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI после загрузки
             this.renderScreen('order_history');
             
         } catch (error) {
             console.error('Load history error:', error);
             this.hideLoading();
+            this.enableUI(); // Разблокируем UI при ошибке
             this.showNotification('error', 'Ошибка загрузки истории: ' + error.message);
             // Все равно показываем экран истории, но с пустым списком
             this.ordersHistory = [];
@@ -478,12 +507,9 @@ class RestaurantOrderApp {
     handleMainAction(action) {
         const card = event.currentTarget;
         
-        // Анимация нажатия
-        card.style.transform = 'scale(0.98)';
-        
-        setTimeout(() => {
-            card.style.transform = '';
-            
+        // Блокируем UI и показываем анимацию
+        this.disableUI();
+        this.animateCardClick(card, () => {
             switch(action) {
                 case 'new_order':
                     this.loadUserTemplates();
@@ -500,7 +526,7 @@ class RestaurantOrderApp {
                     }, 500);
                     break;
             }
-        }, 150);
+        });
     }
     
     // Рендер экрана выбора шаблона
@@ -548,9 +574,8 @@ class RestaurantOrderApp {
     handleTemplateSelect(templateName, cardElement) {
         // Анимация нажатия
         cardElement.style.transform = 'scale(0.98)';
-        
+        this.disableUI();
         setTimeout(() => {
-            cardElement.style.transform = '';
             this.loadTemplateProducts(templateName);
         }, 150);
     }
@@ -561,7 +586,7 @@ class RestaurantOrderApp {
         
         // Анимация кнопки
         button.style.transform = 'translateX(-3px)';
-        
+        this.disableUI();
         setTimeout(() => {
             button.style.transform = '';
             this.renderScreen('main');
@@ -716,9 +741,11 @@ class RestaurantOrderApp {
         this.currentUser = null;
         this.ordersHistory = [];
         this.availableTemplates = [];
+        this.enableUI(); // Разблокируем UI
         this.renderScreen('login');
     }
 }
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
