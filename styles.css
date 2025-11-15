@@ -917,11 +917,8 @@ input:focus, textarea:focus, select:focus {
     border: 2px solid #e9ecef;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.grouping-toggle-container:hover {
-    border-color: #3498db;
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+    position: relative;
+    z-index: 10;
 }
 
 .toggle-switch {
@@ -954,11 +951,11 @@ input:focus, textarea:focus, select:focus {
     left: 4px;
     width: 100px;
     height: 36px;
-    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     border-radius: 20px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -975,68 +972,35 @@ input:focus, textarea:focus, select:focus {
     z-index: 1;
     text-align: center;
     width: 100px;
-    padding: 4px 8px;
-    border-radius: 15px;
 }
 
 .toggle-text-supplier {
-    left: 8px;
+    left: 12px;
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.8);
 }
 
 .toggle-text-tags {
-    right: 8px;
+    right: 12px;
     color: #2c3e50;
-    background: rgba(255, 255, 255, 0.9);
 }
 
 /* Состояния при переключении */
 .toggle-checkbox:checked + .toggle-label .toggle-handle {
     transform: translateX(112px);
-    background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
 }
 
 .toggle-checkbox:checked + .toggle-label .toggle-text-supplier {
     color: #2c3e50;
-    background: rgba(255, 255, 255, 0.9);
 }
 
 .toggle-checkbox:checked + .toggle-label .toggle-text-tags {
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.8);
 }
 
 /* Анимация при наведении */
 .toggle-label:hover .toggle-handle {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-}
-
-.toggle-label:active .toggle-handle {
-    transform: scale(0.95);
-}
-
-.toggle-checkbox:checked + .toggle-label:active .toggle-handle {
-    transform: translateX(112px) scale(0.95);
-}
-
-/* Индикатор активного состояния */
-.toggle-label::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    border-radius: 26px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 0;
-}
-
-.toggle-checkbox:checked + .toggle-label::before {
-    opacity: 1;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
 }
 
 /* Адаптивность для мобильных устройств */
@@ -1064,32 +1028,5 @@ input:focus, textarea:focus, select:focus {
     .toggle-text-tags {
         width: 90px;
         font-size: 12px;
-        padding: 3px 6px;
     }
-}
-
-/* Улучшенная видимость для контента под toggle switch */
-.order-screen {
-    position: relative;
-    z-index: 1;
-}
-
-.department-group {
-    position: relative;
-    z-index: 2;
-}
-
-/* Дополнительные стили для лучшей читаемости */
-.product-item {
-    background: #ffffff;
-    margin: 8px 0;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-    transition: all 0.3s ease;
-}
-
-.product-item:hover {
-    border-color: #3498db;
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
 }
