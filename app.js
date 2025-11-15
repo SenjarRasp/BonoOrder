@@ -274,7 +274,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // Отправка заявки - ОБНОВЛЕННАЯ ВЕРСИЯ
+    // Отправка заявки
     async submitOrder(templateName) {
         if (!this.currentUser || !this.currentUser.phone) {
             this.showNotification('error', 'Ошибка: пользователь не авторизован');
@@ -283,6 +283,8 @@ class RestaurantOrderApp {
         }
         
         try {
+            // СОХРАНЯЕМ ДАННЫЕ ПЕРЕД ОТПРАВКОЙ
+            this.saveCurrentFormData();
             this.disableUI(); // Блокируем UI перед отправкой
             const items = this.collectOrderItems();
             if (items.length === 0) {
@@ -1099,6 +1101,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
