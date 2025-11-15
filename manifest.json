@@ -1,8 +1,8 @@
 {
-  "name": "Restaurant Orders",
-  "short_name": "RstOrders",
+  "name": "Bono Заявки",
+  "short_name": "Bono Заявки",
   "description": "Система управления заявками для ресторана",
-  "start_url": "/BonoOrder/?v=3",
+  "start_url": "/BonoOrder/?v=4",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
