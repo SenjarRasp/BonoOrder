@@ -26,24 +26,72 @@ body {
     margin: 0 auto;
 }
 
+.input-group {
+    margin-bottom: 20px;
+}
+
 .input-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     font-weight: 600;
     color: #2c3e50;
+    font-size: 14px;
 }
 
-.input-group select[multiple] {
-    min-height: 100px;
-    resize: vertical;
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    background-color: white;
 }
 
-.input-group small {
-    display: block;
-    margin-top: 5px;
-    color: #7f8c8d;
-    font-size: 12px;
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #3498db;
 }
+
+.input-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23333' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+/* Анимация появления поля ввода */
+#customTagGroup {
+    transition: all 0.3s ease;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для обязательных полей */
+.input-group input:required,
+.input-group select:required {
+    border-left: 3px solid #e74c3c;
+}
+
+.input-group input:valid,
+.input-group select:valid {
+    border-left: 3px solid #27ae60;
+}
+
 /* Общие стили */
 .btn {
     padding: 12px 24px;
@@ -1282,4 +1330,5 @@ input:focus, textarea:focus, select:focus {
     padding: 30px;
     font-style: italic;
 }
+
 
