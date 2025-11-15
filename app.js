@@ -215,7 +215,7 @@ class RestaurantOrderApp {
                 name: loginResult.user.name,
                 department: loginResult.user.department,
                 position: loginResult.user.position,
-                templates: loginResult.user.templates
+                templates: loginResult.user.templates,
                 isAdmin: loginResult.user.isAdmin || false
             };
 
@@ -1340,6 +1340,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
