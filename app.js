@@ -566,15 +566,15 @@ class RestaurantOrderApp {
                             <option value="_custom">-- Добавить свой тег --</option>
                         </select>
                     </div>
-                    
-                    <div class="input-group">
-                        <label>Единица измерения *</label>
-                        <input type="text" id="productUnit" required value="шт">
-                    </div>
 
                     <div class="input-group" id="customTagGroup" style="display: none;">
                         <label>Новый тег *</label>
                         <input type="text" id="customTag" placeholder="Введите новый тег">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Единица измерения *</label>
+                        <input type="text" id="productUnit" required value="шт">
                     </div>
                     
                     <div class="input-group">
@@ -1393,6 +1393,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
