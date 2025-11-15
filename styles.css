@@ -1241,34 +1241,6 @@ input:focus, textarea:focus, select:focus {
 .toggle-label:active .toggle-handle {
     width: 100px;
 }
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 480px) {
-    .grouping-toggle-container {
-        padding: 12px;
-    }
-    
-    .toggle-label {
-        width: 180px;
-        height: 36px;
-    }
-    
-    .toggle-handle {
-        width: 82px;
-        height: 28px;
-    }
-    
-    .toggle-checkbox:checked + .toggle-label .toggle-handle {
-        transform: translateX(90px);
-    }
-    
-    .toggle-text-supplier,
-    .toggle-text-tags {
-        width: 82px;
-        font-size: 11px;
-    }
-}
-
 /* Улучшенные стили для полей ввода */
 .quantity-input, .comment-input {
     transition: all 0.3s ease;
@@ -1290,3 +1262,74 @@ input:focus, textarea:focus, select:focus {
     background-color: #f8f9fa;
 }
 
+/* Альтернативный дизайн toggle switch */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    width: 200px;
+    height: 44px;
+    background: linear-gradient(145deg, #e6e6e6, #ffffff);
+    border-radius: 25px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.1), 
+                -3px -3px 8px rgba(255,255,255,0.8);
+    overflow: hidden;
+}
+
+.toggle-handle {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 92px;
+    height: 36px;
+    background: linear-gradient(145deg, #000000, #333333);
+    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.2),
+                -2px -2px 4px rgba(255,255,255,0.1);
+}
+
+.toggle-text-supplier,
+.toggle-text-tags {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    z-index: 3;
+    text-align: center;
+    width: 92px;
+    pointer-events: none;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.toggle-text-supplier {
+    left: 12px;
+    color: #7f8c8d;
+}
+
+.toggle-text-tags {
+    right: 12px;
+    color: #7f8c8d;
+}
+
+.toggle-checkbox:not(:checked) + .toggle-label .toggle-text-supplier {
+    color: #ffffff;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-text-tags {
+    color: #ffffff;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-handle {
+    transform: translateX(100px);
+    background: linear-gradient(145deg, #000000, #333333);
+}
