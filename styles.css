@@ -905,3 +905,40 @@ input:focus, textarea:focus, select:focus {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
+/* Стили для переключателя сортировки */
+.grouping-selector {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.grouping-selector:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.grouping-selector input[type="radio"] {
+    accent-color: #000000;
+}
+
+.grouping-selector label {
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.grouping-selector label:hover {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+/* Адаптивность для переключателя */
+@media (max-width: 480px) {
+    .grouping-selector div {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .grouping-selector label {
+        justify-content: center;
+    }
+}
