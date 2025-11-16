@@ -1330,3 +1330,97 @@ input:focus, textarea:focus, select:focus {
     padding: 30px;
     font-style: italic;
 }
+
+/* Стили для списков с чекбоксами */
+.products-list, .suppliers-list {
+    background: white;
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.product-item, .supplier-item {
+    padding: 12px;
+    border-bottom: 1px solid #ecf0f1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.product-item:last-child, .supplier-item:last-child {
+    border-bottom: none;
+}
+
+.product-item:hover, .supplier-item:hover {
+    background-color: #f8f9fa;
+}
+
+.product-item input[type="checkbox"], 
+.supplier-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+/* Стили для форм управления */
+.template-item, .user-item {
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.template-item:hover, .user-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Стили для многострочных select */
+select[multiple] {
+    min-height: 120px;
+    padding: 8px;
+}
+
+select[multiple] option {
+    padding: 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+select[multiple] option:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Стили для кнопок удаления */
+.btn.danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn.danger:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* Адаптивность для новых форм */
+@media (max-width: 768px) {
+    .template-item, .user-item {
+        padding: 10px;
+    }
+    
+    .products-list, .suppliers-list {
+        max-height: 300px;
+    }
+}
+
+/* Стили для статусов операций */
+.status.warning {
+    background: #fff3cd;
+    color: #856404;
+    display: block;
+}
+
+.status.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    display: block;
+}
