@@ -219,17 +219,30 @@ class RestaurantOrderApp {
                 templates: loginResult.user.templates,
                 isAdmin: loginResult.user.isAdmin || false
             };
-
-            const adminStatus = String(this.currentUser.isAdmin).toUpperCase();
+    
+            // Улучшенная проверка прав - обрабатываем разные форматы
+            const adminValue = this.currentUser.isAdmin;
+            console.log('Raw admin value:', adminValue, 'Type:', typeof adminValue);
+            
+            let adminStatus;
+            if (typeof adminValue === 'boolean') {
+                adminStatus = adminValue ? 'TRUE' : 'FALSE';
+            } else if (typeof adminValue === 'string') {
+                adminStatus = adminValue.toUpperCase();
+            } else {
+                adminStatus = String(adminValue).toUpperCase();
+            }
+            
             this.isAdmin = adminStatus === 'TRUE' || adminStatus === 'SUPER';
             this.isSuperAdmin = adminStatus === 'SUPER';
-
+        
             console.log('Login debug:', {
+                rawAdmin: adminValue,
                 adminStatus,
                 isAdmin: this.isAdmin,
                 isSuperAdmin: this.isSuperAdmin
             });
-            
+        
             this.showSuccess(`Добро пожаловать, ${this.currentUser.name}!`);
             setTimeout(() => {
                 this.renderScreen('main');
@@ -240,6 +253,7 @@ class RestaurantOrderApp {
             this.showNotification('error', error.message);
         }
     }
+
     // Загрузка доступных шаблонов
     async loadUserTemplates() {
         try {
@@ -524,6 +538,9 @@ class RestaurantOrderApp {
                 case 'delete_supplier':
                     screenHTML = this.renderDeleteSupplierScreen(data);
                     break;
+                case 'delete_product':
+                    screenHTML = this.renderDeleteProductScreen(data);
+                    break;
                 case 'manage_templates':
                     screenHTML = this.renderTemplatesManagementScreen(data);
                     break;
@@ -542,6 +559,11 @@ class RestaurantOrderApp {
 
             if (screenName === 'order_creation') {
                 this.initToggleSwitch();
+            }
+            if (screenName === 'delete_product') {
+                setTimeout(() => {
+                    this.setupProductSelection();
+                }, 100);
             }
             if (screenName === 'order_history') {
                 setTimeout(() => {
@@ -920,6 +942,7 @@ class RestaurantOrderApp {
         }
     }
 
+    // Обновленный метод renderDeleteProductScreen с фильтрацией
     renderDeleteProductScreen(data) {
         const { products = [], tags = [] } = data;
         
@@ -929,21 +952,23 @@ class RestaurantOrderApp {
             `<option value="${tag}">${tag}</option>`
         ).join('');
     
-        const productsList = products.length > 0 ? products.map(product => `
-            <div class="product-item">
-                <input type="checkbox" id="product_${product.id}" name="products" value="${product.id}">
-                <label for="product_${product.id}">
-                    <strong>${product.name}</strong> 
-                    <span style="color: #666; font-size: 12px;">
-                        (${product.product_tags} • ${product.unit} • ${product.supplier})
-                    </span>
-                </label>
-            </div>
-        `).join('') : `
-            <div style="text-align: center; padding: 20px; color: #7f8c8d;">
-                <p>Товары не найдены</p>
-            </div>
-        `;
+        const renderProductsList = (productsToRender) => {
+            return productsToRender.length > 0 ? productsToRender.map(product => `
+                <div class="product-item" data-tags="${product.product_tags}" data-name="${product.name.toLowerCase()}">
+                    <input type="checkbox" id="product_${product.id}" name="products" value="${product.id}">
+                    <label for="product_${product.id}">
+                        <strong>${product.name}</strong> 
+                        <span style="color: #666; font-size: 12px;">
+                            (${product.product_tags} • ${product.unit} • ${product.supplier})
+                        </span>
+                    </label>
+                </div>
+            `).join('') : `
+                <div style="text-align: center; padding: 20px; color: #7f8c8d;">
+                    <p>Товары не найдены</p>
+                </div>
+            `;
+        };
     
         return `
             <div class="main-screen screen-transition">
@@ -954,22 +979,46 @@ class RestaurantOrderApp {
                 
                 <div class="form">
                     <div class="input-group">
+                        <label>Поиск по названию:</label>
+                        <input type="text" id="productSearch" placeholder="Введите название товара..." 
+                               oninput="app.filterProductsBySearch()" style="width: 100%;">
+                    </div>
+    
+                    <div class="input-group">
                         <label>Фильтр по тегам (можно выбрать несколько):</label>
-                        <select id="tagFilter" multiple style="height: 120px;">
+                        <select id="tagFilter" multiple style="height: 120px;" onchange="app.filterProducts()">
                             ${tagsOptions}
                         </select>
                         <small>Удерживайте Ctrl для выбора нескольких тегов</small>
+                        <div style="margin-top: 5px;">
+                            <button class="btn secondary" onclick="app.clearTagFilter()" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">
+                                Очистить теги
+                            </button>
+                            <button class="btn secondary" onclick="app.selectAllTags()" style="padding: 5px 10px; font-size: 12px;">
+                                Выбрать все
+                            </button>
+                        </div>
                     </div>
     
                     <div class="input-group">
                         <label>Список товаров (можно выбрать несколько):</label>
-                        <div class="products-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
-                            ${productsList}
+                        <div style="margin-bottom: 10px;">
+                            <input type="checkbox" id="selectAllProducts" onchange="app.toggleSelectAllProducts()">
+                            <label for="selectAllProducts" style="font-size: 14px; margin-left: 5px;">
+                                Выбрать все видимые товары
+                            </label>
+                        </div>
+                        <div id="productsListContainer" class="products-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                            ${renderProductsList(products)}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #7f8c8d;">
+                            Найдено товаров: <span id="productsCount">${products.length}</span> | 
+                            Выбрано: <span id="selectedCount">0</span>
                         </div>
                     </div>
                     
                     <button class="btn primary" onclick="app.deleteSelectedProducts()" style="width: 100%; background-color: #e74c3c;">
-                        🗑️ Удалить выбранные товары
+                        🗑️ Удалить выбранные товары (0)
                     </button>
                 </div>
                 
@@ -978,15 +1027,149 @@ class RestaurantOrderApp {
         `;
     }
 
-    async deleteSelectedProducts() {
-        const selectedProducts = Array.from(document.querySelectorAll('input[name="products"]:checked'))
-            .map(checkbox => checkbox.value);
+    // Метод для поиска по названию
+    filterProductsBySearch() {
+        this.filterProducts();
+    }
 
+    // Метод для выбора всех тегов
+    selectAllTags() {
+        const tagFilter = document.getElementById('tagFilter');
+        for (let i = 0; i < tagFilter.options.length; i++) {
+            tagFilter.options[i].selected = true;
+        }
+        this.filterProducts();
+    }
+
+    // Метод для выбора всех видимых товаров
+    toggleSelectAllProducts() {
+        const selectAllCheckbox = document.getElementById('selectAllProducts');
+        const visibleProductItems = document.querySelectorAll('.product-item[style="display: block"]');
+        
+        visibleProductItems.forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = selectAllCheckbox.checked;
+            }
+        });
+        
+        this.updateSelectionCount();
+    }
+
+    // Метод для обновления счетчика выбранных товаров
+    updateSelectionCount() {
+        const selectedCheckboxes = document.querySelectorAll('.product-item input[type="checkbox"]:checked');
+        const selectedCount = selectedCheckboxes.length;
+        
+        document.getElementById('selectedCount').textContent = selectedCount;
+        
+        const deleteButton = document.querySelector('.btn.primary');
+        if (deleteButton) {
+            deleteButton.textContent = `🗑️ Удалить выбранные товары (${selectedCount})`;
+        }
+    }
+
+    // Добавим обработчик событий для чекбоксов после рендера
+    setupProductSelection() {
+        const checkboxes = document.querySelectorAll('.product-item input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateSelectionCount();
+            });
+        });
+    }
+    
+    // Улучшенный метод фильтрации с учетом поиска и тегов
+    filterProducts() {
+        const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+        const tagFilter = document.getElementById('tagFilter');
+        const selectedTags = Array.from(tagFilter.selectedOptions).map(option => option.value);
+        
+        const allProductItems = document.querySelectorAll('.product-item');
+        let visibleCount = 0;
+        let selectedCount = 0;
+        
+        allProductItems.forEach(item => {
+            const productTags = item.getAttribute('data-tags');
+            const productName = item.getAttribute('data-name');
+            const productTagArray = productTags ? productTags.split(',').map(tag => tag.trim()) : [];
+            
+            // Проверяем соответствие поиску и тегам
+            const matchesSearch = !searchTerm || productName.includes(searchTerm);
+            const matchesTags = selectedTags.length === 0 || 
+                              productTagArray.some(tag => selectedTags.includes(tag));
+            
+            const shouldShow = matchesSearch && matchesTags;
+            item.style.display = shouldShow ? 'block' : 'none';
+            
+            if (shouldShow) {
+                visibleCount++;
+                // Считаем выбранные товары среди видимых
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    selectedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        document.getElementById('productsCount').textContent = visibleCount;
+        document.getElementById('selectedCount').textContent = selectedCount;
+        
+        // Обновляем текст кнопки
+        const deleteButton = document.querySelector('.btn.primary');
+        if (deleteButton) {
+            deleteButton.textContent = `🗑️ Удалить выбранные товары (${selectedCount})`;
+        }
+    }
+    
+    // Новый метод для фильтрации товаров по тегам
+    filterProductsByTags() {
+        const tagFilter = document.getElementById('tagFilter');
+        const selectedTags = Array.from(tagFilter.selectedOptions).map(option => option.value);
+        
+        const allProductItems = document.querySelectorAll('.product-item');
+        let visibleCount = 0;
+        
+        allProductItems.forEach(item => {
+            const productTags = item.getAttribute('data-tags');
+            const productTagArray = productTags ? productTags.split(',').map(tag => tag.trim()) : [];
+            
+            // Показываем товар если:
+            // - не выбраны теги (показываем все)
+            // - или товар имеет хотя бы один из выбранных тегов
+            const shouldShow = selectedTags.length === 0 || 
+                              productTagArray.some(tag => selectedTags.includes(tag));
+            
+            item.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) visibleCount++;
+        });
+        
+        // Обновляем счетчик
+        document.getElementById('productsCount').textContent = visibleCount;
+    }
+    
+    // Метод для очистки фильтра
+    clearTagFilter() {
+        const tagFilter = document.getElementById('tagFilter');
+        tagFilter.selectedIndex = -1;
+        this.filterProductsByTags();
+    }
+    
+    // Обновленный метод для удаления товаров с учетом фильтрации
+    async deleteSelectedProducts() {
+        const selectedProducts = Array.from(document.querySelectorAll('.product-item input[name="products"]:checked'))
+            .map(checkbox => checkbox.value);
+    
         if (selectedProducts.length === 0) {
             this.showNotification('error', 'Выберите хотя бы один товар для удаления');
             return;
         }
-
+    
+        if (!confirm(`Вы уверены, что хотите удалить ${selectedProducts.length} товар(ов)?`)) {
+            return;
+        }
+    
         try {
             this.showLoading('Удаление товаров...');
             await this.apiCall('delete_products', { productIds: selectedProducts });
@@ -999,7 +1182,6 @@ class RestaurantOrderApp {
             this.showNotification('error', 'Ошибка удаления: ' + error.message);
         }
     }
-
     // Новые методы для удаления поставщиков
     async showDeleteSupplierScreen() {
         try {
@@ -2010,6 +2192,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
