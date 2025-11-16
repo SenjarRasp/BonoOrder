@@ -1051,26 +1051,28 @@ class RestaurantOrderApp {
         const selectAllCheckbox = document.getElementById('selectAllProducts');
         const isChecked = selectAllCheckbox.checked;
         
-        // Находим все ВИДИМЫЕ товары (те, которые не скрыты)
+        console.log('Toggle select all:', isChecked);
+        
+        // Находим все ВИДИМЫЕ товары
         const allProductItems = document.querySelectorAll('.product-item');
         
         allProductItems.forEach(item => {
-            // Проверяем, видим ли элемент
-            const isVisible = item.style.display !== 'none';
+            // Проверяем, видим ли элемент (display не 'none')
+            const isVisible = item.style.display !== 'none' && 
+                             window.getComputedStyle(item).display !== 'none';
+            
             if (isVisible) {
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 if (checkbox) {
                     checkbox.checked = isChecked;
+                    // Триггерим событие change для обновления счетчика
+                    checkbox.dispatchEvent(new Event('change'));
                 }
             }
         });
         
+        // Обновляем счетчик
         this.updateSelectionCount();
-        
-        // Сбрасываем состояние "Выбрать все" после применения
-        setTimeout(() => {
-            selectAllCheckbox.checked = false;
-        }, 100);
     }
 
     // Метод для обновления счетчика выбранных товаров
@@ -1257,38 +1259,61 @@ class RestaurantOrderApp {
     
     // Метод для кастомного подтверждения
     showCustomConfirm(message) {
-        return new Promise((resolve) => {
+        return new Promise((resolvePromise) => {
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
             overlay.style.display = 'flex';
+            overlay.style.zIndex = '10001';
             
             overlay.innerHTML = `
-                <div class="modal-content" style="max-width: 300px;">
-                    <div class="modal-header">
-                        <h3>Подтверждение</h3>
-                    </div>
-                    <div style="padding: 20px; text-align: center;">
-                        <p>${message}</p>
-                    </div>
-                    <div style="display: flex; gap: 10px; padding: 0 20px 20px;">
-                        <button class="btn secondary" onclick="this.closest('.modal-overlay').remove(); resolve(false)" style="flex: 1;">
-                            Отмена
-                        </button>
-                        <button class="btn primary" onclick="this.closest('.modal-overlay').remove(); resolve(true)" style="flex: 1; background-color: #e74c3c;">
-                            Удалить
-                        </button>
+                <div class="modal-content" style="max-width: 300px; text-align: center;">
+                    <div style="padding: 20px;">
+                        <h3 style="margin-bottom: 15px;">Подтверждение</h3>
+                        <p style="margin-bottom: 20px;">${message}</p>
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button id="confirmCancel" class="btn secondary" style="flex: 1;">
+                                Отмена
+                            </button>
+                            <button id="confirmOk" class="btn primary" style="flex: 1; background-color: #e74c3c;">
+                                Удалить
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
             
             document.body.appendChild(overlay);
             
+            // Обработчики событий
+            const cancelButton = overlay.querySelector('#confirmCancel');
+            const okButton = overlay.querySelector('#confirmOk');
+            
+            const closeModal = (result) => {
+                overlay.remove();
+                resolvePromise(result);
+            };
+            
+            cancelButton.addEventListener('click', () => closeModal(false));
+            okButton.addEventListener('click', () => closeModal(true));
+            
             // Закрытие по клику на overlay
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
-                    overlay.remove();
-                    resolve(false);
+                    closeModal(false);
                 }
+            });
+            
+            // Закрытие по ESC
+            const handleKeydown = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal(false);
+                }
+            };
+            document.addEventListener('keydown', handleKeydown);
+            
+            // Убираем обработчик после закрытия
+            overlay.addEventListener('remove', () => {
+                document.removeEventListener('keydown', handleKeydown);
             });
         });
     }
@@ -1460,7 +1485,13 @@ class RestaurantOrderApp {
         const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
         const product_tags = selectedTags.join(', ');
         
-        const tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
+        let tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
+        
+        // Очищаем Telegram ID от лишних пробелов, но сохраняем как строку
+        tg_id_admin = tg_id_admin.split(',')
+            .map(id => String(id.trim())) // Сохраняем как строку
+            .filter(id => id)
+            .join(',');
     
         if (!name || !type || selectedTags.length === 0) {
             this.showNotification('error', 'Заполните все обязательные поля');
@@ -1494,8 +1525,11 @@ class RestaurantOrderApp {
         
         let tg_id_admin = document.getElementById('newTemplateTgAdmin').value;
         
-        // Очищаем Telegram ID от лишних пробелов
-        tg_id_admin = tg_id_admin.split(',').map(id => id.trim()).filter(id => id).join(',');
+        // Очищаем Telegram ID от лишних пробелов, но сохраняем как строку
+        tg_id_admin = tg_id_admin.split(',')
+            .map(id => String(id.trim())) // Сохраняем как строку
+            .filter(id => id)
+            .join(',');
     
         if (!name || !type || selectedTags.length === 0) {
             this.showNotification('error', 'Заполните все обязательные поля');
@@ -1515,6 +1549,7 @@ class RestaurantOrderApp {
                 this.showTemplatesManagementScreen();
             }, 2000);
         } catch (error) {
+            this.hideLoading();
             this.showNotification('error', 'Ошибка добавления: ' + error.message);
         }
     }
@@ -1804,7 +1839,7 @@ class RestaurantOrderApp {
     
     // Исправленный метод добавления пользователя
     async addNewUser() {
-        const phone = document.getElementById('newUserPhone').value;
+    const phone = document.getElementById('newUserPhone').value;
         const name = document.getElementById('newUserName').value;
         const password = document.getElementById('newUserPassword').value;
         const department = document.getElementById('newUserDepartment').value;
@@ -1825,8 +1860,14 @@ class RestaurantOrderApp {
         try {
             this.showLoading('Добавление пользователя...');
             await this.apiCall('add_user', { 
-                phone, name, password, department, position, 
-                templates, admin, is_active: 'TRUE' 
+                phone: String(phone), // Сохраняем как строку
+                name, 
+                password, 
+                department, 
+                position, 
+                templates, 
+                admin, 
+                is_active: 'TRUE' 
             });
             this.showSuccess('Пользователь успешно добавлен!');
             setTimeout(() => {
@@ -1837,7 +1878,6 @@ class RestaurantOrderApp {
             this.showNotification('error', 'Ошибка добавления: ' + error.message);
         }
     }
-
     // Исправленный метод обновления пользователя
     async updateUser(userPhone) {
         const name = document.getElementById(`name_${userPhone}`).value;
@@ -1908,7 +1948,15 @@ class RestaurantOrderApp {
     async addSupplier(supplierData) {
         try {
             this.showLoading('Добавление поставщика...');
-            const result = await this.apiCall('add_supplier', supplierData);
+            
+            // Сохраняем как строки для сохранения ведущих нулей
+            const data = {
+                name: supplierData.name,
+                tg_id: String(supplierData.tg_id || ''), // Сохраняем как строку
+                phone: String(supplierData.phone) // Сохраняем как строку
+            };
+            
+            const result = await this.apiCall('add_supplier', data);
             this.showSuccess('Поставщик успешно добавлен!');
             setTimeout(() => {
                 this.renderScreen('main');
@@ -2450,6 +2498,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
