@@ -1053,58 +1053,40 @@ class RestaurantOrderApp {
         
         console.log('Toggle select all:', isChecked);
         
-        // Находим все ВИДИМЫЕ товары
+        // Находим все ВИДИМЫЕ товары (используем более надежный метод)
         const allProductItems = document.querySelectorAll('.product-item');
+        let visibleCount = 0;
         
         allProductItems.forEach(item => {
-            // Проверяем, видим ли элемент (display не 'none')
-            const isVisible = item.style.display !== 'none' && 
-                             window.getComputedStyle(item).display !== 'none';
+            // Проверяем видимость через computed style
+            const style = window.getComputedStyle(item);
+            const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
             
             if (isVisible) {
+                visibleCount++;
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 if (checkbox) {
                     checkbox.checked = isChecked;
-                    // Триггерим событие change для обновления счетчика
-                    checkbox.dispatchEvent(new Event('change'));
+                    console.log('Setting checkbox:', checkbox.id, isChecked);
                 }
             }
         });
         
-        // Обновляем счетчик
+        console.log('Visible items:', visibleCount);
         this.updateSelectionCount();
     }
-
     // Метод для обновления счетчика выбранных товаров
     updateSelectionCount() {
         const selectedCheckboxes = document.querySelectorAll('.product-item input[type="checkbox"]:checked');
         const selectedCount = selectedCheckboxes.length;
         
-        const selectedCountElement = document.getElementById('selectedCount');
-        if (selectedCountElement) {
-            selectedCountElement.textContent = selectedCount;
-        }
+        document.getElementById('selectedCount').textContent = selectedCount;
         
         const deleteButton = document.querySelector('.btn.primary');
-        if (deleteButton && deleteButton.textContent.includes('Удалить')) {
+        if (deleteButton) {
             deleteButton.textContent = `🗑️ Удалить выбранные товары (${selectedCount})`;
         }
-        
-        // Обновляем состояние "Выбрать все"
-        const selectAllCheckbox = document.getElementById('selectAllProducts');
-        if (selectAllCheckbox) {
-            const visibleProductItems = document.querySelectorAll('.product-item[style="display: block"], .product-item:not([style])');
-            const visibleChecked = Array.from(visibleProductItems).filter(item => {
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                return checkbox && checkbox.checked;
-            }).length;
-            
-            // Устанавливаем состояние "Выбрать все" только если все видимые выбраны
-            selectAllCheckbox.checked = visibleChecked > 0 && visibleChecked === visibleProductItems.length;
-            selectAllCheckbox.indeterminate = visibleChecked > 0 && visibleChecked < visibleProductItems.length;
-        }
     }
-
     // Добавим обработчик событий для чекбоксов после рендера
     setupProductSelection() {
         const checkboxes = document.querySelectorAll('.product-item input[type="checkbox"]');
@@ -1421,7 +1403,7 @@ class RestaurantOrderApp {
                     </div>
                     <div class="input-group">
                         <label>Telegram ID админа (через запятую):</label>
-                        <input type="text" id="tg_admin_${template.id}" value="${template.tg_id_admin}" style="width: 100%;" placeholder="940486322,123456789">
+                        <input type="text" id="tg_admin_${template.id}" value="${template.tg_id_admin ? template.tg_id_admin.replace(/'/g, '') : ''}" style="width: 100%;" placeholder="940486322,123456789">
                         <small>Введите ID через запятую без пробелов</small>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -1502,13 +1484,7 @@ class RestaurantOrderApp {
         const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
         const product_tags = selectedTags.join(', ');
         
-        let tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
-        
-        // Очищаем Telegram ID от лишних пробелов, но сохраняем как строку
-        tg_id_admin = tg_id_admin.split(',')
-            .map(id => String(id.trim())) // Сохраняем как строку
-            .filter(id => id)
-            .join(',');
+        const tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
     
         if (!name || !type || selectedTags.length === 0) {
             this.showNotification('error', 'Заполните все обязательные поля');
@@ -1525,10 +1501,14 @@ class RestaurantOrderApp {
                 tg_id_admin 
             });
             this.showSuccess('Шаблон успешно обновлен!');
+            // Перезагружаем экран чтобы обновить данные
+            setTimeout(() => {
+                this.showTemplatesManagementScreen();
+            }, 1500);
         } catch (error) {
             this.showNotification('error', 'Ошибка обновления: ' + error.message);
         }
-    }
+}
     
     // Исправленный метод добавления шаблона
     async addNewTemplate() {
@@ -1703,7 +1683,7 @@ class RestaurantOrderApp {
     
             return `
                 <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
-                    <h3>${user.name} (${user.phone})</h3>
+                    <h3>${user.name} (${user.phone ? user.phone.replace(/^'/, '') : ''})</h3>
                     <div class="input-group">
                         <label>Имя:</label>
                         <input type="text" id="name_${user.phone}" value="${user.name}" style="width: 100%;">
@@ -2428,13 +2408,18 @@ class RestaurantOrderApp {
     setupProductSelection() {
         const checkboxes = document.querySelectorAll('.product-item input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
-            // Удаляем старые обработчики
-            checkbox.removeEventListener('change', this.updateSelectionCount);
-            // Добавляем новые
             checkbox.addEventListener('change', () => {
                 this.updateSelectionCount();
             });
         });
+        
+        // Добавляем обработчик для чекбокса "Выбрать все"
+        const selectAllCheckbox = document.getElementById('selectAllProducts');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', () => {
+                this.toggleSelectAllProducts();
+            });
+        }
     }
     
     // Обработчик выбора тега
@@ -2536,6 +2521,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
