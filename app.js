@@ -359,6 +359,9 @@ class RestaurantOrderApp {
     // API вызов
     async apiCall(action, data = {}) {
         console.log('📡 API Call:', action, data);
+
+        // Блокируем UI перед запросом
+        this.disableUI();
         
         try {
             // Добавляем небольшую задержку между запросами
@@ -370,7 +373,6 @@ class RestaurantOrderApp {
             
             console.log('Fetching URL:', url.toString());
             
-            // УБИРАЕМ mode: 'no-cors' и добавляем обработку CORS
             const response = await fetch(url.toString());
             
             if (!response.ok) {
@@ -396,6 +398,9 @@ class RestaurantOrderApp {
             }
             
             throw new Error('Ошибка соединения: ' + error.message);
+        } finally {
+            // Всегда разблокируем UI после завершения запроса
+            this.hideLoading();
         }
     }
 
@@ -942,7 +947,7 @@ class RestaurantOrderApp {
         }
     }
 
-    // Обновленный метод с фильтрацией
+    // Обновленный renderDeleteProductScreen с правильным расположением поиска
     renderDeleteProductScreen(data) {
         const { products = [], tags = [] } = data;
         
@@ -976,13 +981,6 @@ class RestaurantOrderApp {
                 </header>
                 
                 <div class="form">
-                    <!-- Поиск по названию ПЕРЕД списком -->
-                    <div class="input-group">
-                        <label>Поиск по названию:</label>
-                        <input type="text" id="productSearch" placeholder="Введите название товара..." 
-                               oninput="app.filterProductsBySearch()" style="width: 100%;">
-                    </div>
-    
                     <div class="input-group">
                         <label>Фильтр по тегам (можно выбрать несколько):</label>
                         <select id="tagFilter" multiple style="height: 120px;" onchange="app.filterProducts()">
@@ -1001,13 +999,21 @@ class RestaurantOrderApp {
     
                     <div class="input-group">
                         <label>Список товаров (можно выбрать несколько):</label>
-                        <!-- Чекбокс "Выбрать все видимые" ПЕРЕД списком -->
+                        
+                        <!-- Поиск по названию ПРЯМО ПЕРЕД списком -->
+                        <div style="margin-bottom: 10px;">
+                            <input type="text" id="productSearch" placeholder="Поиск по названию товара..." 
+                                   oninput="app.filterProductsBySearch()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        
+                        <!-- Чекбокс "Выбрать все видимые" ПРЯМО ПЕРЕД списком -->
                         <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" id="selectAllProducts" onchange="app.toggleSelectAllProducts()">
                             <label for="selectAllProducts" style="font-size: 14px; margin: 0;">
                                 Выбрать все видимые товары
                             </label>
                         </div>
+                        
                         <div id="productsListContainer" class="products-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
                             ${renderProductsList(products)}
                         </div>
@@ -1026,7 +1032,6 @@ class RestaurantOrderApp {
             </div>
         `;
     }
-
     // Метод для поиска по названию
     filterProductsBySearch() {
         this.filterProducts();
@@ -1041,24 +1046,31 @@ class RestaurantOrderApp {
         this.filterProducts();
     }
 
-    // Метод для выбора всех видимых товаров
+    // Исправленный метод для выбора всех видимых товаров
     toggleSelectAllProducts() {
         const selectAllCheckbox = document.getElementById('selectAllProducts');
         const isChecked = selectAllCheckbox.checked;
         
-        // Находим все ВИДИМЫЕ товары
-        const visibleProductItems = document.querySelectorAll('.product-item[style="display: block"], .product-item:not([style])');
+        // Находим все ВИДИМЫЕ товары (те, которые не скрыты)
+        const allProductItems = document.querySelectorAll('.product-item');
         
-        console.log('Select all visible:', isChecked, 'Visible items:', visibleProductItems.length);
-        
-        visibleProductItems.forEach(item => {
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.checked = isChecked;
+        allProductItems.forEach(item => {
+            // Проверяем, видим ли элемент
+            const isVisible = item.style.display !== 'none';
+            if (isVisible) {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = isChecked;
+                }
             }
         });
         
         this.updateSelectionCount();
+        
+        // Сбрасываем состояние "Выбрать все" после применения
+        setTimeout(() => {
+            selectAllCheckbox.checked = false;
+        }, 100);
     }
 
     // Метод для обновления счетчика выбранных товаров
@@ -1084,7 +1096,7 @@ class RestaurantOrderApp {
         });
     }
     
-    // Улучшенный метод фильтрации с учетом поиска и тегов
+    // Улучшенный метод фильтрации
     filterProducts() {
         const searchTerm = document.getElementById('productSearch').value.toLowerCase();
         const tagFilter = document.getElementById('tagFilter');
@@ -1160,8 +1172,10 @@ class RestaurantOrderApp {
             this.showNotification('error', 'Выберите хотя бы один товар для удаления');
             return;
         }
-    
-        if (!confirm(`Вы уверены, что хотите удалить ${selectedProducts.length} товар(ов)?`)) {
+
+         // Кастомное подтверждение вместо стандартного confirm
+        const userConfirmed = await this.showCustomConfirm(`Удалить ${selectedProducts.length} товар(ов)?`);
+        if (!userConfirmed) {
             return;
         }
     
@@ -1240,7 +1254,44 @@ class RestaurantOrderApp {
             </div>
         `;
     }
-
+    
+    // Метод для кастомного подтверждения
+    showCustomConfirm(message) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.display = 'flex';
+            
+            overlay.innerHTML = `
+                <div class="modal-content" style="max-width: 300px;">
+                    <div class="modal-header">
+                        <h3>Подтверждение</h3>
+                    </div>
+                    <div style="padding: 20px; text-align: center;">
+                        <p>${message}</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; padding: 0 20px 20px;">
+                        <button class="btn secondary" onclick="this.closest('.modal-overlay').remove(); resolve(false)" style="flex: 1;">
+                            Отмена
+                        </button>
+                        <button class="btn primary" onclick="this.closest('.modal-overlay').remove(); resolve(true)" style="flex: 1; background-color: #e74c3c;">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Закрытие по клику на overlay
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                    resolve(false);
+                }
+            });
+        });
+    }
     async deleteSelectedSuppliers() {
         const selectedSuppliers = Array.from(document.querySelectorAll('input[name="suppliers"]:checked'))
             .map(checkbox => checkbox.value);
@@ -1250,6 +1301,11 @@ class RestaurantOrderApp {
             return;
         }
 
+        const userConfirmed = await this.showCustomConfirm(`Удалить ${selectedSuppliers.length} поставщик(ов)?`);
+        if (!userConfirmed) {
+            return;
+        }
+        
         try {
             this.showLoading('Удаление поставщиков...');
             await this.apiCall('delete_suppliers', { supplierIds: selectedSuppliers });
@@ -1258,7 +1314,6 @@ class RestaurantOrderApp {
                 this.showDeleteSupplierScreen();
             }, 2000);
         } catch (error) {
-            this.hideLoading();
             this.showNotification('error', 'Ошибка удаления: ' + error.message);
         }
     }
@@ -1281,52 +1336,59 @@ class RestaurantOrderApp {
         }
     }
     
+    // Обновленный renderTemplatesManagementScreen с правильным отображением выбранных тегов
     renderTemplatesManagementScreen(data) {
         const { templates = [], tags = [] } = data;
         
-        const tagsOptions = tags.map(tag => 
-            `<option value="${tag}">${tag}</option>`
-        ).join('');
+        const templatesList = templates.length > 0 ? templates.map(template => {
+            // Подготавливаем выбранные теги для этого шаблона
+            const templateTags = template.product_tags ? template.product_tags.split(',').map(tag => tag.trim()) : [];
+            
+            const tagsOptions = tags.map(tag => 
+                `<option value="${tag}" ${templateTags.includes(tag) ? 'selected' : ''}>${tag}</option>`
+            ).join('');
     
-        const templatesList = templates.length > 0 ? templates.map(template => `
-            <div class="template-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
-                <div class="input-group">
-                    <label>Название шаблона:</label>
-                    <input type="text" id="name_${template.id}" value="${template.name}" style="width: 100%;">
-                </div>
-                <div class="input-group">
-                    <label>Тип:</label>
-                    <select id="type_${template.id}" style="width: 100%;">
-                        <option value="daily" ${template.type === 'daily' ? 'selected' : ''}>Ежедневный</option>
-                        <option value="weekly" ${template.type === 'weekly' ? 'selected' : ''}>Еженедельный</option>
-                        <option value="anytime" ${template.type === 'anytime' ? 'selected' : ''}>Любое время</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Теги товаров (можно выбрать несколько):</label>
-                    <select id="tags_${template.id}" multiple style="height: 100px; width: 100%;">
-                        ${tagsOptions}
-                    </select>
-                    <small>Удерживайте Ctrl для выбора нескольких тегов</small>
-                    <div style="margin-top: 5px;">
-                        <button type="button" class="btn secondary" onclick="app.selectAllTemplateTags('${template.id}')" style="padding: 3px 8px; font-size: 11px;">
-                            Выбрать все
-                        </button>
-                        <button type="button" class="btn secondary" onclick="app.clearTemplateTags('${template.id}')" style="padding: 3px 8px; font-size: 11px; margin-left: 5px;">
-                            Очистить
-                        </button>
+            return `
+                <div class="template-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
+                    <div class="input-group">
+                        <label>Название шаблона:</label>
+                        <input type="text" id="name_${template.id}" value="${template.name}" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label>Тип:</label>
+                        <select id="type_${template.id}" style="width: 100%;">
+                            <option value="daily" ${template.type === 'daily' ? 'selected' : ''}>Ежедневный</option>
+                            <option value="weekly" ${template.type === 'weekly' ? 'selected' : ''}>Еженедельный</option>
+                            <option value="anytime" ${template.type === 'anytime' ? 'selected' : ''}>Любое время</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Теги товаров (можно выбрать несколько):</label>
+                        <select id="tags_${template.id}" multiple style="height: 100px; width: 100%;">
+                            ${tagsOptions}
+                        </select>
+                        <small>Удерживайте Ctrl для выбора нескольких тегов</small>
+                        <div style="margin-top: 5px;">
+                            <button type="button" class="btn secondary" onclick="app.selectAllTemplateTags('${template.id}')" style="padding: 3px 8px; font-size: 11px;">
+                                Выбрать все
+                            </button>
+                            <button type="button" class="btn secondary" onclick="app.clearTemplateTags('${template.id}')" style="padding: 3px 8px; font-size: 11px; margin-left: 5px;">
+                                Очистить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Telegram ID админа (через запятую):</label>
+                        <input type="text" id="tg_admin_${template.id}" value="${template.tg_id_admin}" style="width: 100%;" placeholder="940486322,123456789">
+                        <small>Введите ID через запятую без пробелов</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn primary" onclick="app.updateTemplate('${template.id}')" style="flex: 1;">💾 Сохранить</button>
+                        <button class="btn" onclick="app.deleteTemplate('${template.id}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Telegram ID админа (через запятую):</label>
-                    <input type="text" id="tg_admin_${template.id}" value="${template.tg_id_admin}" style="width: 100%;">
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn primary" onclick="app.updateTemplate('${template.id}')" style="flex: 1;">💾 Сохранить</button>
-                    <button class="btn" onclick="app.deleteTemplate('${template.id}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
-                </div>
-            </div>
-        `).join('') : `
+            `;
+        }).join('') : `
             <div style="text-align: center; padding: 20px; color: #7f8c8d;">
                 <p>Шаблоны не найдены</p>
             </div>
@@ -1356,7 +1418,7 @@ class RestaurantOrderApp {
                     <div class="input-group">
                         <label>Теги товаров (можно выбрать несколько):</label>
                         <select id="newTemplateTags" multiple style="height: 100px; width: 100%;">
-                            ${tagsOptions}
+                            ${tags.map(tag => `<option value="${tag}">${tag}</option>`).join('')}
                         </select>
                         <small>Удерживайте Ctrl для выбора нескольких тегов</small>
                         <div style="margin-top: 5px;">
@@ -1370,7 +1432,8 @@ class RestaurantOrderApp {
                     </div>
                     <div class="input-group">
                         <label>Telegram ID админа (через запятую):</label>
-                        <input type="text" id="newTemplateTgAdmin">
+                        <input type="text" id="newTemplateTgAdmin" placeholder="940486322,123456789">
+                        <small>Введите ID через запятую без пробелов</small>
                     </div>
                     <button class="btn primary" onclick="app.addNewTemplate()" style="width: 100%;">
                         ➕ Добавить шаблон
@@ -1386,7 +1449,75 @@ class RestaurantOrderApp {
             </div>
         `;
     }
-
+    
+    // Исправленный метод обновления шаблона
+    async updateTemplate(templateId) {
+        const name = document.getElementById(`name_${templateId}`).value;
+        const type = document.getElementById(`type_${templateId}`).value;
+        
+        // Получаем выбранные теги
+        const tagsSelect = document.getElementById(`tags_${templateId}`);
+        const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
+        const product_tags = selectedTags.join(', ');
+        
+        const tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
+    
+        if (!name || !type || selectedTags.length === 0) {
+            this.showNotification('error', 'Заполните все обязательные поля');
+            return;
+        }
+    
+        try {
+            this.showLoading('Обновление шаблона...');
+            const result = await this.apiCall('update_template', { 
+                templateId, 
+                name, 
+                type, 
+                product_tags, 
+                tg_id_admin 
+            });
+            this.showSuccess('Шаблон успешно обновлен!');
+        } catch (error) {
+            this.showNotification('error', 'Ошибка обновления: ' + error.message);
+        }
+    }
+    
+    // Исправленный метод добавления шаблона
+    async addNewTemplate() {
+        const name = document.getElementById('newTemplateName').value;
+        const type = document.getElementById('newTemplateType').value;
+        
+        // Получаем выбранные теги для нового шаблона
+        const tagsSelect = document.getElementById('newTemplateTags');
+        const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
+        const product_tags = selectedTags.join(', ');
+        
+        let tg_id_admin = document.getElementById('newTemplateTgAdmin').value;
+        
+        // Очищаем Telegram ID от лишних пробелов
+        tg_id_admin = tg_id_admin.split(',').map(id => id.trim()).filter(id => id).join(',');
+    
+        if (!name || !type || selectedTags.length === 0) {
+            this.showNotification('error', 'Заполните все обязательные поля');
+            return;
+        }
+    
+        try {
+            this.showLoading('Добавление шаблона...');
+            await this.apiCall('add_template', { 
+                name, 
+                type, 
+                product_tags, 
+                tg_id_admin 
+            });
+            this.showSuccess('Шаблон успешно добавлен!');
+            setTimeout(() => {
+                this.showTemplatesManagementScreen();
+            }, 2000);
+        } catch (error) {
+            this.showNotification('error', 'Ошибка добавления: ' + error.message);
+        }
+    }
     // Методы для работы с тегами в шаблонах
     selectAllTemplateTags(templateId) {
         const tagsSelect = document.getElementById(`tags_${templateId}`);
@@ -1412,41 +1543,6 @@ class RestaurantOrderApp {
         tagsSelect.selectedIndex = -1;
     }
     
-    // Исправленный метод добавления шаблона
-    async addNewTemplate() {
-        const name = document.getElementById('newTemplateName').value;
-        const type = document.getElementById('newTemplateType').value;
-        
-        // Получаем выбранные теги для нового шаблона
-        const tagsSelect = document.getElementById('newTemplateTags');
-        const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
-        const product_tags = selectedTags.join(', ');
-        
-        const tg_id_admin = document.getElementById('newTemplateTgAdmin').value;
-    
-        if (!name || !type || !product_tags) {
-            this.showNotification('error', 'Заполните все обязательные поля');
-            return;
-        }
-    
-        try {
-            this.showLoading('Добавление шаблона...');
-            await this.apiCall('add_template', { 
-                name, 
-                type, 
-                product_tags, 
-                tg_id_admin 
-            });
-            this.showSuccess('Шаблон успешно добавлен!');
-            setTimeout(() => {
-                this.showTemplatesManagementScreen();
-            }, 2000);
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка добавления: ' + error.message);
-        }
-    }
-
     // Добавим инициализацию выбранных тегов при загрузке экрана
     async showTemplatesManagementScreen() {
         try {
@@ -1485,40 +1581,9 @@ class RestaurantOrderApp {
         });
     }
     
-    // Исправленный метод обновления шаблона
-    async updateTemplate(templateId) {
-        const name = document.getElementById(`name_${templateId}`).value;
-        const type = document.getElementById(`type_${templateId}`).value;
-        
-        // Получаем выбранные теги
-        const tagsSelect = document.getElementById(`tags_${templateId}`);
-        const selectedTags = Array.from(tagsSelect.selectedOptions).map(option => option.value);
-        const product_tags = selectedTags.join(', ');
-        
-        const tg_id_admin = document.getElementById(`tg_admin_${templateId}`).value;
-    
-        if (!name || !type || !product_tags) {
-            this.showNotification('error', 'Заполните все обязательные поля');
-            return;
-        }
-    
-        try {
-            this.showLoading('Обновление шаблона...');
-            await this.apiCall('update_template', { 
-                templateId, 
-                name, // ВАЖНО: передаем название
-                type, 
-                product_tags, 
-                tg_id_admin 
-            });
-            this.showSuccess('Шаблон успешно обновлен!');
-        } catch (error) {
-            this.hideLoading();
-            this.showNotification('error', 'Ошибка обновления: ' + error.message);
-        }
-    }
     async deleteTemplate(templateId) {
-        if (!confirm('Вы уверены, что хотите удалить этот шаблон?')) {
+        const userConfirmed = await this.showCustomConfirm('Удалить этот шаблон?');
+        if (!userConfirmed) {
             return;
         }
 
@@ -1530,7 +1595,6 @@ class RestaurantOrderApp {
                 this.showTemplatesManagementScreen();
             }, 2000);
         } catch (error) {
-            this.hideLoading();
             this.showNotification('error', 'Ошибка удаления: ' + error.message);
         }
     }
@@ -1573,69 +1637,74 @@ class RestaurantOrderApp {
         });
     }
     
-    // Обновленный с выпадающим списком шаблонов
+    // Обновленный renderUsersManagementScreen с правильным отображением выбранных шаблонов
     renderUsersManagementScreen(data) {
         const { users = [], templates = [] } = data;
         
-        const templatesOptions = templates.map(template => 
-            `<option value="${template.name}">${template.name}</option>`
-        ).join('');
+        const usersList = users.length > 0 ? users.map(user => {
+            // Подготавливаем выбранные шаблоны для этого пользователя
+            const userTemplates = user.templates ? user.templates.split(',').map(template => template.trim()) : [];
+            
+            const templatesOptions = templates.map(template => 
+                `<option value="${template.name}" ${userTemplates.includes(template.name) ? 'selected' : ''}>${template.name}</option>`
+            ).join('');
     
-        const usersList = users.length > 0 ? users.map(user => `
-            <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
-                <h3>${user.name} (${user.phone})</h3>
-                <div class="input-group">
-                    <label>Имя:</label>
-                    <input type="text" id="name_${user.phone}" value="${user.name}" style="width: 100%;">
-                </div>
-                <div class="input-group">
-                    <label>Пароль:</label>
-                    <input type="text" id="password_${user.phone}" value="${user.password}" style="width: 100%;">
-                </div>
-                <div class="input-group">
-                    <label>Отдел:</label>
-                    <input type="text" id="department_${user.phone}" value="${user.department}" style="width: 100%;">
-                </div>
-                <div class="input-group">
-                    <label>Должность:</label>
-                    <input type="text" id="position_${user.phone}" value="${user.position}" style="width: 100%;">
-                </div>
-                <div class="input-group">
-                    <label>Активен:</label>
-                    <select id="active_${user.phone}" style="width: 100%;">
-                        <option value="TRUE" ${user.is_active === 'TRUE' ? 'selected' : ''}>Активен</option>
-                        <option value="FALSE" ${user.is_active === 'FALSE' ? 'selected' : ''}>Неактивен</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Шаблоны (можно выбрать несколько):</label>
-                    <select id="templates_${user.phone}" multiple style="height: 100px; width: 100%;">
-                        ${templatesOptions}
-                    </select>
-                    <small>Удерживайте Ctrl для выбора нескольких шаблонов</small>
-                    <div style="margin-top: 5px;">
-                        <button type="button" class="btn secondary" onclick="app.selectAllUserTemplates('${user.phone}')" style="padding: 3px 8px; font-size: 11px;">
-                            Выбрать все
-                        </button>
-                        <button type="button" class="btn secondary" onclick="app.clearUserTemplates('${user.phone}')" style="padding: 3px 8px; font-size: 11px; margin-left: 5px;">
-                            Очистить
-                        </button>
+            return `
+                <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
+                    <h3>${user.name} (${user.phone})</h3>
+                    <div class="input-group">
+                        <label>Имя:</label>
+                        <input type="text" id="name_${user.phone}" value="${user.name}" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label>Пароль:</label>
+                        <input type="text" id="password_${user.phone}" value="${user.password}" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label>Отдел:</label>
+                        <input type="text" id="department_${user.phone}" value="${user.department}" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label>Должность:</label>
+                        <input type="text" id="position_${user.phone}" value="${user.position}" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label>Активен:</label>
+                        <select id="active_${user.phone}" style="width: 100%;">
+                            <option value="TRUE" ${user.is_active === 'TRUE' ? 'selected' : ''}>Активен</option>
+                            <option value="FALSE" ${user.is_active === 'FALSE' ? 'selected' : ''}>Неактивен</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Шаблоны (можно выбрать несколько):</label>
+                        <select id="templates_${user.phone}" multiple style="height: 100px; width: 100%;">
+                            ${templatesOptions}
+                        </select>
+                        <small>Удерживайте Ctrl для выбора нескольких шаблонов</small>
+                        <div style="margin-top: 5px;">
+                            <button type="button" class="btn secondary" onclick="app.selectAllUserTemplates('${user.phone}')" style="padding: 3px 8px; font-size: 11px;">
+                                Выбрать все
+                            </button>
+                            <button type="button" class="btn secondary" onclick="app.clearUserTemplates('${user.phone}')" style="padding: 3px 8px; font-size: 11px; margin-left: 5px;">
+                                Очистить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Права:</label>
+                        <select id="admin_${user.phone}" style="width: 100%;">
+                            <option value="FALSE" ${user.admin === 'FALSE' ? 'selected' : ''}>Обычный пользователь</option>
+                            <option value="TRUE" ${user.admin === 'TRUE' ? 'selected' : ''}>Администратор</option>
+                            <option value="SUPER" ${user.admin === 'SUPER' ? 'selected' : ''}>Супер-администратор</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn primary" onclick="app.updateUser('${user.phone}')" style="flex: 1;">💾 Сохранить</button>
+                        <button class="btn" onclick="app.deleteUser('${user.phone}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Права:</label>
-                    <select id="admin_${user.phone}" style="width: 100%;">
-                        <option value="FALSE" ${user.admin === 'FALSE' ? 'selected' : ''}>Обычный пользователь</option>
-                        <option value="TRUE" ${user.admin === 'TRUE' ? 'selected' : ''}>Администратор</option>
-                        <option value="SUPER" ${user.admin === 'SUPER' ? 'selected' : ''}>Супер-администратор</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn primary" onclick="app.updateUser('${user.phone}')" style="flex: 1;">💾 Сохранить</button>
-                    <button class="btn" onclick="app.deleteUser('${user.phone}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
-                </div>
-            </div>
-        `).join('') : `
+            `;
+        }).join('') : `
             <div style="text-align: center; padding: 20px; color: #7f8c8d;">
                 <p>Пользователи не найдены</p>
             </div>
@@ -1673,7 +1742,7 @@ class RestaurantOrderApp {
                     <div class="input-group">
                         <label>Шаблоны (можно выбрать несколько):</label>
                         <select id="newUserTemplates" multiple style="height: 100px; width: 100%;">
-                            ${templatesOptions}
+                            ${templates.map(template => `<option value="${template.name}">${template.name}</option>`).join('')}
                         </select>
                         <small>Удерживайте Ctrl для выбора нескольких шаблонов</small>
                         <div style="margin-top: 5px;">
@@ -1804,7 +1873,8 @@ class RestaurantOrderApp {
     }
 
     async deleteUser(userPhone) {
-        if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+        const userConfirmed = await this.showCustomConfirm('Удалить этого пользователя?');
+        if (!userConfirmed) {
             return;
         }
 
@@ -1816,7 +1886,6 @@ class RestaurantOrderApp {
                 this.showUsersManagementScreen();
             }, 2000);
         } catch (error) {
-            this.hideLoading();
             this.showNotification('error', 'Ошибка удаления: ' + error.message);
         }
     }
@@ -2381,6 +2450,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
