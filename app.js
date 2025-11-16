@@ -544,7 +544,7 @@ class RestaurantOrderApp {
             
         }, 300);
     }
-}
+    
     // Рендер экрана добавления товара
     renderAddProductScreen(data) {
         const tagsOptions = data.tags ? data.tags.map(tag => 
@@ -1963,4 +1963,5 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
