@@ -1473,3 +1473,82 @@ select[multiple] option:hover {
     padding: 5px 10px;
     font-size: 12px;
 }
+/* Добавим в styles.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px 20px 0 20px;
+    border-bottom: none;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    text-align: center;
+}
+
+/* Стили для disabled состояния */
+.action-card.disabled,
+.template-card.disabled,
+.btn.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Улучшенные стили для выпадающих списков */
+select[multiple] {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+select[multiple] option {
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+select[multiple] option:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+select[multiple] option:checked {
+    background-color: #3498db;
+    color: white;
+}
