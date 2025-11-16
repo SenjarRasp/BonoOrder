@@ -1080,11 +1080,28 @@ class RestaurantOrderApp {
         const selectedCheckboxes = document.querySelectorAll('.product-item input[type="checkbox"]:checked');
         const selectedCount = selectedCheckboxes.length;
         
-        document.getElementById('selectedCount').textContent = selectedCount;
+        const selectedCountElement = document.getElementById('selectedCount');
+        if (selectedCountElement) {
+            selectedCountElement.textContent = selectedCount;
+        }
         
         const deleteButton = document.querySelector('.btn.primary');
-        if (deleteButton) {
+        if (deleteButton && deleteButton.textContent.includes('Удалить')) {
             deleteButton.textContent = `🗑️ Удалить выбранные товары (${selectedCount})`;
+        }
+        
+        // Обновляем состояние "Выбрать все"
+        const selectAllCheckbox = document.getElementById('selectAllProducts');
+        if (selectAllCheckbox) {
+            const visibleProductItems = document.querySelectorAll('.product-item[style="display: block"], .product-item:not([style])');
+            const visibleChecked = Array.from(visibleProductItems).filter(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                return checkbox && checkbox.checked;
+            }).length;
+            
+            // Устанавливаем состояние "Выбрать все" только если все видимые выбраны
+            selectAllCheckbox.checked = visibleChecked > 0 && visibleChecked === visibleProductItems.length;
+            selectAllCheckbox.indeterminate = visibleChecked > 0 && visibleChecked < visibleProductItems.length;
         }
     }
 
@@ -1320,17 +1337,17 @@ class RestaurantOrderApp {
     async deleteSelectedSuppliers() {
         const selectedSuppliers = Array.from(document.querySelectorAll('input[name="suppliers"]:checked'))
             .map(checkbox => checkbox.value);
-
+    
         if (selectedSuppliers.length === 0) {
             this.showNotification('error', 'Выберите хотя бы одного поставщика для удаления');
             return;
         }
-
+    
         const userConfirmed = await this.showCustomConfirm(`Удалить ${selectedSuppliers.length} поставщик(ов)?`);
         if (!userConfirmed) {
             return;
         }
-        
+    
         try {
             this.showLoading('Удаление поставщиков...');
             await this.apiCall('delete_suppliers', { supplierIds: selectedSuppliers });
@@ -1621,7 +1638,7 @@ class RestaurantOrderApp {
         if (!userConfirmed) {
             return;
         }
-
+    
         try {
             this.showLoading('Удаление шаблона...');
             await this.apiCall('delete_template', { templateId });
@@ -1917,7 +1934,7 @@ class RestaurantOrderApp {
         if (!userConfirmed) {
             return;
         }
-
+    
         try {
             this.showLoading('Удаление пользователя...');
             await this.apiCall('delete_user', { userPhone });
@@ -1929,6 +1946,7 @@ class RestaurantOrderApp {
             this.showNotification('error', 'Ошибка удаления: ' + error.message);
         }
     }
+    
     // Добавить товар
     async addProduct(productData) {
         try {
@@ -2397,6 +2415,26 @@ class RestaurantOrderApp {
                 this.handleTagSelection(e.target.value);
             }
         });
+        
+        // Динамическая обработка изменений чекбоксов товаров
+        document.addEventListener('change', (e) => {
+            if (e.target.name === 'products') {
+                this.updateSelectionCount();
+            }
+        });
+    }
+    
+    // Обновленный метод для настройки выбора товаров
+    setupProductSelection() {
+        const checkboxes = document.querySelectorAll('.product-item input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            // Удаляем старые обработчики
+            checkbox.removeEventListener('change', this.updateSelectionCount);
+            // Добавляем новые
+            checkbox.addEventListener('change', () => {
+                this.updateSelectionCount();
+            });
+        });
     }
     
     // Обработчик выбора тега
@@ -2498,6 +2536,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
