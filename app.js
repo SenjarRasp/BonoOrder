@@ -220,9 +220,16 @@ class RestaurantOrderApp {
                 isAdmin: loginResult.user.isAdmin || false
             };
 
-            this.isAdmin = this.currentUser.isAdmin === true || this.currentUser.isAdmin === 'TRUE';
-            this.isSuperAdmin = this.currentUser.isAdmin === 'SUPER';
-        
+            const adminStatus = String(this.currentUser.isAdmin).toUpperCase();
+            this.isAdmin = adminStatus === 'TRUE' || adminStatus === 'SUPER';
+            this.isSuperAdmin = adminStatus === 'SUPER';
+
+            console.log('Login debug:', {
+                adminStatus,
+                isAdmin: this.isAdmin,
+                isSuperAdmin: this.isSuperAdmin
+            });
+            
             this.showSuccess(`Добро пожаловать, ${this.currentUser.name}!`);
             setTimeout(() => {
                 this.renderScreen('main');
@@ -691,7 +698,7 @@ class RestaurantOrderApp {
                     <p>Добавить нового поставщика</p>
                 </div>
             </div>
-
+    
             <div class="action-card" onclick="app.handleMainAction('delete_product')">
                 <div class="action-content">
                     <div class="action-icon">🗑️</div>
@@ -699,7 +706,7 @@ class RestaurantOrderApp {
                     <p>Удалить товары из базы</p>
                 </div>
             </div>
-
+    
             <div class="action-card" onclick="app.handleMainAction('delete_supplier')">
                 <div class="action-content">
                     <div class="action-icon">❌</div>
@@ -708,7 +715,7 @@ class RestaurantOrderApp {
                 </div>
             </div>
         ` : '';
-
+    
         const superAdminActions = this.isSuperAdmin ? `
             <div class="action-card" onclick="app.handleMainAction('manage_templates')">
                 <div class="action-content">
@@ -717,7 +724,7 @@ class RestaurantOrderApp {
                     <p>Управление шаблонами заявок</p>
                 </div>
             </div>
-
+    
             <div class="action-card" onclick="app.handleMainAction('manage_users')">
                 <div class="action-content">
                     <div class="action-icon">👥</div>
@@ -726,15 +733,15 @@ class RestaurantOrderApp {
                 </div>
             </div>
         ` : '';
-
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
                     <h1>Главная</h1>
                     <div class="user-info">
                         ${this.currentUser.department} • ${this.currentUser.position}
-                        ${this.isAdmin ? ' • 🛠' : ''}
-                        ${this.isSuperAdmin ? ' • 👑' : ''}
+                        ${this.isAdmin ? ' • 👑 Админ' : ''}
+                        ${this.isSuperAdmin ? ' • 👑 Супер-админ' : ''}
                     </div>
                 </header>
                 
@@ -895,10 +902,18 @@ class RestaurantOrderApp {
     async showDeleteProductScreen() {
         try {
             this.showLoading('Загрузка товаров...');
-            const products = await this.apiCall('get_all_products');
+            const result = await this.apiCall('get_all_products');
             const formData = await this.apiCall('get_product_form_data');
             this.hideLoading();
-            this.renderScreen('delete_product', { products, tags: formData.tags });
+            
+            // Проверяем структуру ответа
+            console.log('Products result:', result);
+            const products = result.products || [];
+            
+            this.renderScreen('delete_product', { 
+                products: products, 
+                tags: formData.tags || [] 
+            });
         } catch (error) {
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки: ' + error.message);
@@ -906,13 +921,15 @@ class RestaurantOrderApp {
     }
 
     renderDeleteProductScreen(data) {
-        const { products, tags } = data;
+        const { products = [], tags = [] } = data;
+        
+        console.log('Rendering delete products:', products);
         
         const tagsOptions = tags.map(tag => 
             `<option value="${tag}">${tag}</option>`
         ).join('');
-
-        const productsList = products.map(product => `
+    
+        const productsList = products.length > 0 ? products.map(product => `
             <div class="product-item">
                 <input type="checkbox" id="product_${product.id}" name="products" value="${product.id}">
                 <label for="product_${product.id}">
@@ -922,8 +939,12 @@ class RestaurantOrderApp {
                     </span>
                 </label>
             </div>
-        `).join('');
-
+        `).join('') : `
+            <div style="text-align: center; padding: 20px; color: #7f8c8d;">
+                <p>Товары не найдены</p>
+            </div>
+        `;
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
@@ -939,7 +960,7 @@ class RestaurantOrderApp {
                         </select>
                         <small>Удерживайте Ctrl для выбора нескольких тегов</small>
                     </div>
-
+    
                     <div class="input-group">
                         <label>Список товаров (можно выбрать несколько):</label>
                         <div class="products-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
@@ -983,19 +1004,26 @@ class RestaurantOrderApp {
     async showDeleteSupplierScreen() {
         try {
             this.showLoading('Загрузка поставщиков...');
-            const suppliers = await this.apiCall('get_all_suppliers');
+            const result = await this.apiCall('get_all_suppliers');
             this.hideLoading();
+            
+            // Проверяем структуру ответа
+            console.log('Suppliers result:', result);
+            const suppliers = result.suppliers || [];
+            
             this.renderScreen('delete_supplier', { suppliers });
         } catch (error) {
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки: ' + error.message);
         }
     }
-
+    
     renderDeleteSupplierScreen(data) {
-        const { suppliers } = data;
+        const { suppliers = [] } = data;
         
-        const suppliersList = suppliers.map(supplier => `
+        console.log('Rendering delete suppliers:', suppliers);
+        
+        const suppliersList = suppliers.length > 0 ? suppliers.map(supplier => `
             <div class="supplier-item">
                 <input type="checkbox" id="supplier_${supplier.id}" name="suppliers" value="${supplier.id}">
                 <label for="supplier_${supplier.id}">
@@ -1005,8 +1033,12 @@ class RestaurantOrderApp {
                     </span>
                 </label>
             </div>
-        `).join('');
-
+        `).join('') : `
+            <div style="text-align: center; padding: 20px; color: #7f8c8d;">
+                <p>Поставщики не найдены</p>
+            </div>
+        `;
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
@@ -1058,24 +1090,28 @@ class RestaurantOrderApp {
     async showTemplatesManagementScreen() {
         try {
             this.showLoading('Загрузка шаблонов...');
-            const templates = await this.apiCall('get_all_templates');
+            const result = await this.apiCall('get_all_templates');
             const formData = await this.apiCall('get_product_form_data');
             this.hideLoading();
-            this.renderScreen('manage_templates', { templates, tags: formData.tags });
+            
+            const templates = result.templates || [];
+            const tags = formData.tags || [];
+            
+            this.renderScreen('manage_templates', { templates, tags });
         } catch (error) {
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки: ' + error.message);
         }
     }
-
+    
     renderTemplatesManagementScreen(data) {
-        const { templates, tags } = data;
+        const { templates = [], tags = [] } = data;
         
         const tagsOptions = tags.map(tag => 
             `<option value="${tag}">${tag}</option>`
         ).join('');
-
-        const templatesList = templates.map(template => `
+    
+        const templatesList = templates.length > 0 ? templates.map(template => `
             <div class="template-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
                 <h3>${template.name}</h3>
                 <div class="input-group">
@@ -1100,8 +1136,12 @@ class RestaurantOrderApp {
                     <button class="btn" onclick="app.deleteTemplate('${template.id}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
                 </div>
             </div>
-        `).join('');
-
+        `).join('') : `
+            <div style="text-align: center; padding: 20px; color: #7f8c8d;">
+                <p>Шаблоны не найдены</p>
+            </div>
+        `;
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
@@ -1136,7 +1176,7 @@ class RestaurantOrderApp {
                         ➕ Добавить шаблон
                     </button>
                 </div>
-
+    
                 <div style="margin-top: 30px;">
                     <h3>Существующие шаблоны</h3>
                     ${templatesList}
@@ -1213,24 +1253,28 @@ class RestaurantOrderApp {
     async showUsersManagementScreen() {
         try {
             this.showLoading('Загрузка пользователей...');
-            const users = await this.apiCall('get_all_users');
-            const templates = await this.apiCall('get_all_templates');
+            const usersResult = await this.apiCall('get_all_users');
+            const templatesResult = await this.apiCall('get_all_templates');
             this.hideLoading();
+            
+            const users = usersResult.users || [];
+            const templates = templatesResult.templates || [];
+            
             this.renderScreen('manage_users', { users, templates });
         } catch (error) {
             this.hideLoading();
             this.showNotification('error', 'Ошибка загрузки: ' + error.message);
         }
     }
-
+    
     renderUsersManagementScreen(data) {
-        const { users, templates } = data;
+        const { users = [], templates = [] } = data;
         
         const templatesOptions = templates.map(template => 
             `<option value="${template.name}">${template.name}</option>`
         ).join('');
-
-        const usersList = users.map(user => `
+    
+        const usersList = users.length > 0 ? users.map(user => `
             <div class="user-item" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
                 <h3>${user.name} (${user.phone})</h3>
                 <div class="input-group">
@@ -1274,8 +1318,12 @@ class RestaurantOrderApp {
                     <button class="btn" onclick="app.deleteUser('${user.phone}')" style="flex: 1; background-color: #e74c3c; color: white;">🗑️ Удалить</button>
                 </div>
             </div>
-        `).join('');
-
+        `).join('') : `
+            <div style="text-align: center; padding: 20px; color: #7f8c8d;">
+                <p>Пользователи не найдены</p>
+            </div>
+        `;
+    
         return `
             <div class="main-screen screen-transition">
                 <header class="header">
@@ -1322,7 +1370,7 @@ class RestaurantOrderApp {
                         👥 Добавить пользователя
                     </button>
                 </div>
-
+    
                 <div style="margin-top: 30px;">
                     <h3>Существующие пользователи</h3>
                     ${usersList}
@@ -1332,7 +1380,6 @@ class RestaurantOrderApp {
             </div>
         `;
     }
-
     async addNewUser() {
         const phone = document.getElementById('newUserPhone').value;
         const name = document.getElementById('newUserName').value;
@@ -1963,5 +2010,6 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
