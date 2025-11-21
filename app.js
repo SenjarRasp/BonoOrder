@@ -2106,28 +2106,45 @@ class RestaurantOrderApp {
         return productsHtml;
     }
     // Вынесенный метод рендера одного товара (для переиспользования)
+    // Улучшенная версия renderProductItem с цветовыми индикаторами
     renderProductItem(product) {
         const key = `${product.name}|${product.supplier}`;
         const savedData = this.currentOrderData[key] || {};
         const savedQuantity = savedData.quantity || 0;
         const savedComment = savedData.comment || '';
         
-        // Формируем дополнительную информацию
+        // Формируем дополнительную информацию с иконками и стилями
         const additionalInfo = [];
+        
         if (product.shelf_life) {
-            additionalInfo.push(`🕒 ${product.shelf_life}д`);
+            additionalInfo.push(`
+                <span class="shelf-life-indicator" title="Срок годности">
+                    🕒 ${product.shelf_life}д
+                </span>
+            `);
         }
+        
         if (product.min_stock) {
-            additionalInfo.push(`📦 ${product.min_stock}`);
+            additionalInfo.push(`
+                <span class="min-stock-indicator" title="Минимальный запас">
+                    📦 ${product.min_stock}
+                </span>
+            `);
         }
+        
+        // Основная информация о товаре
+        const mainInfo = `${product.unit} • ${product.supplier}`;
         
         return `
             <div class="product-item">
                 <div class="product-info">
                     <div class="product-name">${product.name}</div>
                     <div class="product-details" style="font-size: 12px; color: #7f8c8d;">
-                        ${product.unit} • ${product.supplier}
-                        ${additionalInfo.length > 0 ? ` • ${additionalInfo.join(' • ')}` : ''}
+                        ${mainInfo}
+                        ${additionalInfo.length > 0 ? 
+                            `<div style="margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px;">${additionalInfo.join('')}</div>` : 
+                            ''
+                        }
                     </div>
                 </div>
                 <input type="number" 
@@ -2531,6 +2548,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
