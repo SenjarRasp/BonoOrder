@@ -2105,12 +2105,21 @@ class RestaurantOrderApp {
         
         return productsHtml;
     }
-     // Вынесенный метод рендера одного товара (для переиспользования)
+    // Вынесенный метод рендера одного товара (для переиспользования)
     renderProductItem(product) {
         const key = `${product.name}|${product.supplier}`;
         const savedData = this.currentOrderData[key] || {};
         const savedQuantity = savedData.quantity || 0;
         const savedComment = savedData.comment || '';
+        
+        // Формируем дополнительную информацию
+        const additionalInfo = [];
+        if (product.shelf_life) {
+            additionalInfo.push(`🕒 ${product.shelf_life}д`);
+        }
+        if (product.min_stock) {
+            additionalInfo.push(`📦 ${product.min_stock}`);
+        }
         
         return `
             <div class="product-item">
@@ -2118,13 +2127,13 @@ class RestaurantOrderApp {
                     <div class="product-name">${product.name}</div>
                     <div class="product-details" style="font-size: 12px; color: #7f8c8d;">
                         ${product.unit} • ${product.supplier}
-                        ${product.shelf_life ? ` • 🕒 ${product.shelf_life}` : ''}
+                        ${additionalInfo.length > 0 ? ` • ${additionalInfo.join(' • ')}` : ''}
                     </div>
                 </div>
                 <input type="number" 
                        class="quantity-input" 
                        min="0" 
-                       value="0" 
+                       value="${savedQuantity}"
                        data-product-name="${product.name}"
                        data-product-unit="${product.unit}"
                        data-supplier="${product.supplier}"
@@ -2138,6 +2147,7 @@ class RestaurantOrderApp {
             </div>
         `;
     }
+    
     // Рендер экрана истории заявок
     renderOrderHistoryScreen() {
         console.log('Rendering history screen, orders count:', this.ordersHistory.length);
@@ -2521,6 +2531,7 @@ class RestaurantOrderApp {
 
 // Инициализация приложения
 const app = new RestaurantOrderApp();
+
 
 
 
